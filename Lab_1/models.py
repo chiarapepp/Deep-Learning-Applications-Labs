@@ -4,58 +4,82 @@ import torch.nn.functional as F
 
 
 # -----------------
-# 1. MLP per MNIST
+# 1. Simple MLP
 # -----------------
 class MLP(nn.Module):
-    def __init__(self, input_size=28*28, hidden_sizes=[256, 128], num_classes=10):
-        super(MLP, self).__init__()
+    def __init__(self, input_size, hidden_sizes, classes, normalization):
+        super().__init__()
+
         layers = []
-        in_features = input_size
-        for h in hidden_sizes:
-            layers.append(nn.Linear(in_features, h))
+
+        # Input layer
+        layers.append(nn.Linear(input_size, hidden_sizes[0]))
+        if normalization:
+            layers.append(nn.BatchNorm1d(hidden_sizes[0]))
+        layers.append(nn.ReLU())
+
+        # Hidden layers
+        for i in range(len(hidden_sizes) - 1):
+            layers.append(nn.Linear(hidden_sizes[i], hidden_sizes[i + 1]))
+            if normalization:
+                layers.append(nn.BatchNorm1d(hidden_sizes[i + 1]))
             layers.append(nn.ReLU())
-            in_features = h
-        layers.append(nn.Linear(in_features, num_classes))
-        self.net = nn.Sequential(*layers)
+
+        # Output layer
+        layers.append(nn.Linear(hidden_sizes[-1], classes))
+        self.model = nn.Sequential(nn.Flatten(), *layers)
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)  # flatten
-        return self.net(x)
+        return self.model(x)
 
 
 # -----------------
 # 2. ResMLP
 # -----------------
 class ResMLPBlock(nn.Module):
-    def __init__(self, dim):
-        super(ResMLPBlock, self).__init__()
-        self.fc1 = nn.Linear(dim, dim)
-        self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(dim, dim)
+    def __init__(self, hidden_dim, normalization):
+        super().__init__()
+        self.fc1 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+
+        if normalization:
+            self.model = nn.Sequential(
+                self.fc1,
+                nn.BatchNorm1d(hidden_dim),
+                nn.ReLU(),
+                self.fc2,
+                nn.BatchNorm1d(hidden_dim),
+                nn.ReLU(),
+            )
+        else:
+            self.model = nn.Sequential(
+                self.fc1,
+                nn.ReLU(),
+                self.fc2,
+                nn.ReLU(),
+            )
 
     def forward(self, x):
-        residual = x
-        out = self.fc1(x)
-        out = self.relu(out)
-        out = self.fc2(out)
-        out += residual
-        out = self.relu(out)
-        return out
-
+        return self.model(x) + x
 
 class ResMLP(nn.Module):
-    def __init__(self, input_size=28*28, hidden_dim=256, num_blocks=2, num_classes=10):
-        super(ResMLP, self).__init__()
+    def __init__(self, input_size, hidden_dim, num_blocks, classes, normalization):
+        super().__init__()
+        
         self.input_layer = nn.Linear(input_size, hidden_dim)
-        self.blocks = nn.Sequential(*[ResMLPBlock(hidden_dim) for _ in range(num_blocks)])
-        self.fc_out = nn.Linear(hidden_dim, num_classes)
+        self.blocks = nn.Sequential(*[ResMLPBlock(hidden_dim, normalization) for _ in range(num_blocks)])
+        self.fc_out = nn.Linear(hidden_dim, classes)
+
+        self.model = nn.Sequential(
+            nn.Flatten(),
+            self.input_layer,
+            nn.ReLU(),
+            self.blocks,
+            self.fc_out,
+        )
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)
-        x = self.input_layer(x)
-        x = self.blocks(x)
-        x = self.fc_out(x)
-        return x
+        return self.model(x)
 
 
 # -----------------
@@ -79,9 +103,7 @@ class SimpleCNN(nn.Module):
         return x
 
 
-# -----------------
-# 4. Utility: funzione costruttore modelli
-# -----------------
+
 def get_model(name, dataset="MNIST", **kwargs):
     """
     Factory function to get model by name.
@@ -89,13 +111,13 @@ def get_model(name, dataset="MNIST", **kwargs):
         name (str): 'mlp', 'resmlp', 'cnn'
         dataset (str): 'MNIST', 'CIFAR10', 'CIFAR100' (influences num_classes)
     """
-    num_classes = 10 if dataset in ["MNIST", "CIFAR10"] else 100
+    classes = 10 if dataset in ["MNIST", "CIFAR10"] else 100
 
     if name.lower() == "mlp":
-        return MLP(num_classes=num_classes, **kwargs)
+        return MLP(classes=classes, **kwargs)
     elif name.lower() == "resmlp":
-        return ResMLP(num_classes=num_classes, **kwargs)
+        return ResMLP(classes=classes, **kwargs)
     elif name.lower() == "cnn":
-        return SimpleCNN(num_classes=num_classes)
+        return SimpleCNN(classes=classes)
     else:
         raise ValueError(f"Model {name} not recognized.")

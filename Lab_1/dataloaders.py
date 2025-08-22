@@ -4,41 +4,39 @@ from torchvision.datasets import MNIST, CIFAR10, CIFAR100
 import torchvision.transforms as transforms
 import numpy as np
 
+"""
+Creates DataLoaders for training, validation, and test sets for the specified dataset. 
+Supported datasets: MNIST, CIFAR10, CIFAR100.
+
+Args:
+    name (str): Dataset name ("MNIST", "CIFAR10", or "CIFAR100").
+    batch_size (int): Number of samples per batch.
+    num_workers (int): Number of subprocesses for data loading.
+    val_ratio (float, optional): Fraction of training data to use for validation. Default is 0.1.
+
+Returns:
+    train_dataloader, val_dataloader, test_dataloader (DataLoader): DataLoaders for training, validation, and test sets.
+    classes (int): Number of classes in the dataset.
+    input_size (int): Flattened input size of a single sample.
+"""
+
 
 def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
-
-    """
-    Returns PyTorch DataLoaders for a specified dataset with an optional validation split.
-
-    Supported datasets:
-    - MNIST
-    - CIFAR10
-    - CIFAR100
-
-    Args:
-        name (str): Dataset name ("MNIST", "CIFAR10", or "CIFAR100").
-        batch_size (int): Number of samples per batch.
-        num_workers (int): Number of subprocesses for data loading.
-        val_ratio (float, optional): Fraction of training data to use for validation. Default is 0.1.
-
-    Returns:
-        train_dataloader, val_dataloader, test_dataloader (DataLoader): DataLoaders for training, validation, and test sets.
-        num_classes (int): Number of classes in the dataset.
-        input_size (int): Flattened input size of a single sample.
-    """
-    ds_train, ds_test, num_classes, input_size = None, None, 0, 0
+    ds_train, ds_test, classes, input_size = None, None, 0, 0
 
     if name == "MNIST":
+        # Convert images to tensor and normalize with MNIST mean and std (grayscale)
         transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))  # Standard MNIST normalization
+            transforms.Normalize((0.1307,), (0.3081,))  
         ])
         ds_train = MNIST(root='./data', train=True, download=True, transform=transform)
         ds_test = MNIST(root='./data', train=False, download=True, transform=transform)
-        num_classes = 10
+        classes = 10
         input_size = 28 * 28
 
     elif name == "CIFAR10":
+        # Convert images to tensor and normalize with CIFAR-10 mean and std (RGB)
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
@@ -48,10 +46,11 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
         ])
         ds_train = CIFAR10(root='./data', train=True, download=True, transform=transform)
         ds_test = CIFAR10(root='./data', train=False, download=True, transform=transform)
-        num_classes = 10
+        classes = 10
         input_size = 32 * 32 * 3
 
     elif name == "CIFAR100":
+        # Convert images to tensor and normalize with CIFAR-100 mean and std (RGB)
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
@@ -61,13 +60,13 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
         ])
         ds_train = CIFAR100(root='./data', train=True, download=True, transform=transform)
         ds_test = CIFAR100(root='./data', train=False, download=True, transform=transform)
-        num_classes = 100
+        classes = 100
         input_size = 32 * 32 * 3
 
     else:
         raise ValueError(f"Dataset {name} not supported.")
 
-    # Split train into train and validation based on val_ratio
+    # Split train into train and validation based on val_ratio (instead of using a fixed size)
     val_size = int(len(ds_train)* val_ratio)
     indices = np.random.permutation(len(ds_train))
     ds_val = Subset(ds_train, indices[:val_size])
@@ -77,4 +76,4 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
     val_dataloader = DataLoader(ds_val, batch_size=batch_size, shuffle=False, num_workers=num_workers) # pin_memory=True)
     test_dataloader = DataLoader(ds_test, batch_size=batch_size, shuffle=False, num_workers=num_workers) # pin_memory=True)
 
-    return train_dataloader, val_dataloader, test_dataloader, num_classes, input_size
+    return train_dataloader, val_dataloader, test_dataloader, classes, input_size

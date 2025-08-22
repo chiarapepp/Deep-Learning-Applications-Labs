@@ -33,17 +33,18 @@ def train_epoch(model, dataloader, optimizer, device, epoch, epochs):
     return np.mean(losses)
 
 
-def train(model, model_type, optimizer, train_dataloader, val_dataloader, args):
+def train(model, run_name, optimizer, train_dataloader, val_dataloader, args):
     train_bar = tqdm(range(args.epochs), desc=f"[Training epochs]")
     for epoch in train_bar:
-        train_loss = train(model, train_dataloader, optimizer, args.device, epoch, args.epochs)
+        train_loss = train_epoch(model, train_dataloader, optimizer, args.device, epoch, args.epochs)
         accuracy, _, val_loss = evaluate_model(model, val_dataloader, args.device)
 
-        if args.scheduler:
-            args.scheduler.step()
+        if args.use_scheduler:
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+            scheduler.step()
 
         if args.use_wandb:
-            wandb.log({"Train-" + model_type + "-" + args.dataset: {"Loss": train_loss, "epoch": epoch}, "Validation-" + model_type + "-" + args.dataset: {"Loss": val_loss, "Accuracy":accuracy, "epoch": epoch}})
+            wandb.log({"Train-" + run_name + "-" + args.dataset: {"Loss": train_loss, "epoch": epoch}, "Validation-" + run_name + "-" + args.dataset: {"Loss": val_loss, "Accuracy":accuracy, "epoch": epoch}})
         train_bar.set_postfix(epoch_loss=f"{train_loss:.4f}")
 
 
@@ -139,3 +140,6 @@ def gradient_norm(model, dataloader, device, args):
 
     if args.use_wandb:
         wandb.log({"Gradient Norm Plot": wandb.Image(plt)})
+
+    plt.show()  
+    plt.close()

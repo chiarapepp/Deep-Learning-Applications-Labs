@@ -1,4 +1,6 @@
 import argparse
+from html import parser
+import os
 import wandb
 import torch
 import torch.nn.functional as F
@@ -28,8 +30,6 @@ def parse_args():
                        help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001,
                        help='Learning rate')
-    parser.add_argument('--weight_decay', type=float, default=1e-4,
-                       help='Weight decay for optimizer')
     
     # MLP specific arguments
     parser.add_argument('--hidden_sizes', type=int, nargs='+', default=[128, 64],
@@ -48,9 +48,6 @@ def parse_args():
                        help='Use residual connections in CNN')
     parser.add_argument('--base_channels', type=int, default=32,
                        help='Base number of channels for CNN')
-    parser.add_argument('--block_type', type=str, default='basic',
-                       choices=['basic', 'bottleneck'],
-                       help='Type of block to use in CNN')
 
     # Data arguments
     parser.add_argument('--num_workers', type=int, default=4,
@@ -60,15 +57,9 @@ def parse_args():
     
     parser.add_argument('--use_scheduler', action='store_true',
                        help='Use cosine learning rate scheduler')
-    '''
-    parser.add_argument('--scheduler_type', type=str, default='step',
-                       choices=['step', 'cosine'],
-                       help='Type of scheduler')
-    '''
 
     parser.add_argument('--seed', type=int, default=10,
-                       help='Random seed for reproducibility')
-    
+                       help='Random seed for reproducibility')    
     parser.add_argument('--use_wandb', action='store_true',
                        help='Use Weights & Biases for logging')
 
@@ -79,7 +70,9 @@ def parse_args():
 def main():
 
     args = parse_args()
-    torch.manual_seed(args.seed)
+    torch.manual_seed(10)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(10)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     train_dataloader, val_dataloader, test_dataloader, classes, input_size = get_dataloaders(args.dataset, args.batch_size, num_workers = args.num_workers, val_ratio=args.val_ratio)
@@ -91,7 +84,7 @@ def main():
         model = ResMLP(input_size, args.hidden_dim, args.num_blocks, classes, args.normalization)
         run_name = f"resmlp_w{args.hidden_dim}_b{args.num_blocks}" 
     elif args.model == "cnn":
-        model = CNN(args.block_type, args.layers, classes, args.use_residual)
+        model = CNN(args.layers, classes, args.use_residual)
         run_name = f"cnn_skip{args.use_residual}_layers{args.layers}"
 
     if args.use_wandb:
@@ -106,16 +99,22 @@ def main():
 
     train(model, run_name, optimizer, train_dataloader, val_dataloader, device, args)
 
-    top1, top5, _ = evaluate_model(model, test_dataloader, device)
+    top1, top5, test_loss = evaluate_model(model, test_dataloader, device)
     if args.use_wandb:
         wandb.log({
         "test_accuracy": top1,
         "test_top5_accuracy": top5
         }, step=args.epochs)
-    print("Test accuracy: {}".format(top1))
 
+    print(f"Final Test Results:")
+    print(f"Top-1 Accuracy: {top1:.4f}")
+    print(f"Top-5 Accuracy: {top5:.4f}")
+    print(f"Test Loss: {test_loss:.4f}")
+
+    print("\nComputing gradient norms...")
     gradient_norm(model, train_dataloader, device, args)
 
+    os.makedirs("Models", exist_ok=True)
     torch.save(model.state_dict(), "Models/"+run_name+".pth")
 
 if __name__ == "__main__":

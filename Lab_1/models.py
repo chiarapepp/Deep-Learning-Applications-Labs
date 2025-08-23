@@ -83,41 +83,54 @@ class ResMLP(nn.Module):
 
 
 # -----------------
-# 3. Simple CNN
+# 3. CNN
 # -----------------
-class SimpleCNN(nn.Module):
-    def __init__(self, num_classes=10):
-        super(SimpleCNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(64 * 8 * 8, 128)  # CIFAR-10: 32x32 → after 2 pools = 8x8
-        self.fc2 = nn.Linear(128, num_classes)
+
+class CNN(nn.Module):
+    def __init__(self, block_type, layers, use_residual):
+        super(CNN, self).__init__()
+        self.layers = layers
+        self.use_residual = use_residual
+
+        if block_type == "basic":
+            self.block = self._make_basic_block
+        elif block_type == "bottleneck":
+            self.block = self._make_bottleneck_block
+        else:
+            raise ValueError("Unknown block type")
+
+        self.conv_layers = self._make_conv_layers()
+        self.fc = nn.Linear(512, 10)  # CIFAR-10: 10 classes
+
+    def _make_conv_layers(self):
+        layers = []
+        in_channels = 3
+        for i in range(self.layers):
+            layers.append(self.block(in_channels))
+            in_channels = 64 * 2 ** i
+        layers.append(nn.AdaptiveAvgPool2d((1, 1)))
+        return nn.Sequential(*layers)
+
+    def _make_basic_block(self, in_channels):
+        return nn.Sequential(
+            nn.Conv2d(in_channels, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+        )
+
+    def _make_bottleneck_block(self, in_channels):
+        return nn.Sequential(
+            nn.Conv2d(in_channels, 64, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 256, kernel_size=1),
+            nn.ReLU(inplace=True),
+        )
 
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))  # 32→16
-        x = self.pool(F.relu(self.conv2(x)))  # 16→8
+        x = self.conv_layers(x)
         x = x.view(x.size(0), -1)
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
+        x = self.fc(x)
         return x
-
-
-
-def get_model(name, dataset="MNIST", **kwargs):
-    """
-    Factory function to get model by name.
-    Args:
-        name (str): 'mlp', 'resmlp', 'cnn'
-        dataset (str): 'MNIST', 'CIFAR10', 'CIFAR100' (influences num_classes)
-    """
-    classes = 10 if dataset in ["MNIST", "CIFAR10"] else 100
-
-    if name.lower() == "mlp":
-        return MLP(classes=classes, **kwargs)
-    elif name.lower() == "resmlp":
-        return ResMLP(classes=classes, **kwargs)
-    elif name.lower() == "cnn":
-        return SimpleCNN(classes=classes)
-    else:
-        raise ValueError(f"Model {name} not recognized.")

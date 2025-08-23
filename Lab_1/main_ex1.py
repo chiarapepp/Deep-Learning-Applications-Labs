@@ -4,10 +4,9 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from models import MLP, ResMLP
+from models import MLP, ResMLP, CNN
 from dataloaders import get_dataloaders
 from utils import train, evaluate_model, gradient_norm
-import torch.nn as nn
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -32,7 +31,7 @@ def parse_args():
     parser.add_argument('--weight_decay', type=float, default=1e-4,
                        help='Weight decay for optimizer')
     
-    # Model-specific arguments
+    # MLP specific arguments
     parser.add_argument('--hidden_sizes', type=int, nargs='+', default=[128, 64],
                        help='Hidden layer sizes for MLP (list of integers)')
     parser.add_argument('--hidden_dim', type=int, default=128,
@@ -42,6 +41,17 @@ def parse_args():
     parser.add_argument('--normalization', action='store_true',
                        help='Use batch normalization')
     
+    # CNN-specific arguments
+    parser.add_argument('--layers', type=int, nargs='*', default=[2, 2, 2, 2],
+                        help='Layer configuration for the CNN')
+    parser.add_argument('--use_residual', action='store_true',
+                       help='Use residual connections in CNN')
+    parser.add_argument('--base_channels', type=int, default=32,
+                       help='Base number of channels for CNN')
+    parser.add_argument('--block_type', type=str, default='basic',
+                       choices=['basic', 'bottleneck'],
+                       help='Type of block to use in CNN')
+
     # Data arguments
     parser.add_argument('--num_workers', type=int, default=4,
                        help='Number of data loading workers')
@@ -56,10 +66,6 @@ def parse_args():
                        help='Type of scheduler')
     '''
 
-    # System arguments
-    parser.add_argument('--device', type=str, default='cuda',
-                       choices=['auto', 'cpu', 'cuda', 'mps'],
-                       help='Device to use for training')
     parser.add_argument('--seed', type=int, default=10,
                        help='Random seed for reproducibility')
     
@@ -74,6 +80,7 @@ def main():
 
     args = parse_args()
     torch.manual_seed(args.seed)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     train_dataloader, val_dataloader, test_dataloader, classes, input_size = get_dataloaders(args.dataset, args.batch_size, num_workers = args.num_workers, val_ratio=args.val_ratio)
 
@@ -82,34 +89,32 @@ def main():
         run_name = f"mlp_w{args.hidden_sizes}_d{len(args.hidden_sizes)}"
     elif args.model == "resmlp":
         model = ResMLP(input_size, args.hidden_dim, args.num_blocks, classes, args.normalization)
-        run_name = f"resmlp_w{args.hidden_dim}_b{args.num_blocks}"
-    '''    
+        run_name = f"resmlp_w{args.hidden_dim}_b{args.num_blocks}" 
     elif args.model == "cnn":
-        layers = args.layers
-        model = CustomCNN(block_type="basic", layers=layers, use_skip=args.skip)
-        run_name = f"cnn_skip{args.skip}_layers{layers}"
-    '''    
+        model = CNN(args.block_type, args.layers, classes, args.use_residual)
+        run_name = f"cnn_skip{args.use_residual}_layers{args.layers}"
+
     if args.use_wandb:
-        run_name = f"{args.model}_{args.dataset}_{args.epochs}epochs"
         wandb.init(
             project='DLA_Lab_1',
             name=run_name,
             config=args
         )
 
-    model = model.to(args.device)
-    data, _ = next(iter(train_dataloader))
-    data = data.to(args.device)
+    model = model.to(device)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=args.lr)
 
-    train(model, run_name, optimizer, train_dataloader, val_dataloader, args)
+    train(model, run_name, optimizer, train_dataloader, val_dataloader, device, args)
 
-    top1, top5, _ = evaluate_model(model, test_dataloader, args.device)
+    top1, top5, _ = evaluate_model(model, test_dataloader, device)
     if args.use_wandb:
-        wandb.log({"Test-" + run_name + "-" + args.dataset: {"Accuracy": top1, "Top-5 Accuracy": top5}})
+        wandb.log({
+        "test_accuracy": top1,
+        "test_top5_accuracy": top5
+        }, step=args.epochs)
     print("Test accuracy: {}".format(top1))
 
-    gradient_norm(model, train_dataloader, args.device, args)
+    gradient_norm(model, train_dataloader, device, args)
 
     torch.save(model.state_dict(), "Models/"+run_name+".pth")
 

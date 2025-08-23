@@ -33,20 +33,29 @@ def train_epoch(model, dataloader, optimizer, device, epoch, epochs):
     return np.mean(losses)
 
 
-def train(model, run_name, optimizer, train_dataloader, val_dataloader, args):
+def train(model, run_name, optimizer, train_dataloader, val_dataloader, device, args):
     train_bar = tqdm(range(args.epochs), desc=f"[Training epochs]")
+    scheduler = None
+    if args.use_scheduler:
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+    
     for epoch in train_bar:
-        train_loss = train_epoch(model, train_dataloader, optimizer, args.device, epoch, args.epochs)
-        accuracy, _, val_loss = evaluate_model(model, val_dataloader, args.device)
+        train_loss = train_epoch(model, train_dataloader, optimizer, device, epoch, args.epochs)
+        test_acc_1, test_acc_5, avg_loss = evaluate_model(model, val_dataloader, device)
 
-        if args.use_scheduler:
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+        if scheduler is not None:
             scheduler.step()
 
         if args.use_wandb:
-            wandb.log({"Train-" + run_name + "-" + args.dataset: {"Loss": train_loss, "epoch": epoch}, "Validation-" + run_name + "-" + args.dataset: {"Loss": val_loss, "Accuracy":accuracy, "epoch": epoch}})
+            wandb.log(
+                {
+                "train_loss": train_loss,
+                "val_loss": avg_loss,
+                "val_acc_1": test_acc_1,
+                "val_acc_5": test_acc_5,
+                "epoch": epoch,
+                }, step=epoch)
         train_bar.set_postfix(epoch_loss=f"{train_loss:.4f}")
-
 
 
 """
@@ -130,7 +139,7 @@ def gradient_norm(model, dataloader, device, args):
 
     plt.figure(figsize=(12, 6))
     plt.bar(range(len(sorted_weight_layers)), weight_norms, color="b", label="Weights", alpha=1)
-    plt.bar(range(len(sorted_bias_layers)), bias_norms, color="r", label="Biases", alpha=0.8)
+    plt.bar(range(len(sorted_bias_layers)), bias_norms, color="r", label="Biases", alpha=0.6)
 
     plt.xlabel("Layers")
     plt.ylabel("Gradient Norm")
@@ -141,5 +150,4 @@ def gradient_norm(model, dataloader, device, args):
     if args.use_wandb:
         wandb.log({"Gradient Norm Plot": wandb.Image(plt)})
 
-    plt.show()  
-    plt.close()
+    

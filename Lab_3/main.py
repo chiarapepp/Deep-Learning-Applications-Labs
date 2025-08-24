@@ -81,7 +81,8 @@ def main():
             lr=args.lr,
             epochs=args.epochs,
             batch_size=args.batch_size,
-            output_dir=args.output_dir
+            output_dir=args.output_dir,
+            use_wandb=args.use_wandb,
         )
     
 

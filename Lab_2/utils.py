@@ -1,0 +1,168 @@
+import torch
+from torch.distributions import Categorical
+import numpy as np
+import os
+
+'''
+Utility function for model checkpointing.
+'''
+
+def save_checkpoint(epoch, model, opt, dir):
+    torch.save(
+        {
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "opt_state_dict": opt.state_dict(),
+        },
+        os.path.join(dir, f"checkpoint-{epoch}.pt"),
+    )
+
+"""
+Utility function to load a model checkpoint.
+"""
+
+def load_checkpoint(fname, model, opt=None):
+    checkpoint = torch.load(fname)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    if opt:
+        opt.load_state_dict(checkpoint["opt_state_dict"])
+    return model
+
+
+'''
+This function takes in an environment, observation, policy, a temperature parameter and a 
+flag for deterministic or stochastic action selection (sample from pi(a | obs)).
+
+It returns the selected action, the log probability of that action (needed for policy gradient)
+and the entropy of the action distribution.
+'''
+
+def select_action(env, obs, policy, temperature=1.0, deterministic=False):
+    probs = policy(obs, temperature=temperature)
+
+    if deterministic:
+        action = torch.argmax(probs)
+        log_prob = torch.log(probs[action])
+        entropy = 0
+    else:
+        dist = Categorical(probs)
+        action = dist.sample()
+        log_prob = dist.log_prob(action)
+        entropy = dist.entropy()
+    return (action.item(), log_prob.reshape(1), entropy)
+
+ 
+"""
+Function that computes the discounted total reward for a sequence of rewards.
+G_t = r_t + gamma * r_{t+1} + gamma^2 * r_{t+2} + ...
+
+Parameters:
+    rewards (list or numpy array): List or array of rewards.
+    gamma (float): Discount factor.
+
+"""
+def compute_returns(rewards, gamma):
+    # Calculate discounted rewards in reverse order, then flip the array.
+    discounted_rewards = np.array([gamma**(i + 1) * r for i, r in enumerate(rewards)][::-1])
+    total_returns = np.cumsum(discounted_rewards)
+
+    return np.flip(total_returns, axis=0).copy()
+
+
+"""
+Function that given an environment and a policy, run it up to the maximum number of steps.
+
+Parameters:
+    env: The environment to run the episode in.
+    policy: The policy used to select actions.
+    max_steps (int): The maximum number of steps to run in the episode. Default is 1000.
+    temperature (float): The temperature parameter for action selection. Default is 1.0.
+    deterministic (bool): Whether to select actions deterministically or stochastically. Default is False.
+
+    Returns:
+    tuple: A tuple containing:
+        - observations (list): A list of observations throughout the episode.
+        - actions (list): A list of actions taken during the episode.
+        - log_probs (torch.Tensor): A tensor containing the log probabilities of the actions taken.
+        - rewards (list): A list of rewards received at each step.
+        - entropies (torch.Tensor): A tensor containing the entropies of the action distributions.
+"""
+
+def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=False):
+
+    observations = []
+    actions = []
+    log_probs = []
+    rewards = []
+    entropies = []
+
+    # Reset the environment and start the episode.
+    (obs, info) = env.reset()
+    for i in range(max_steps):
+        # Get the current observation, run the policy and select an action.
+        obs = torch.tensor(obs)
+        (action, log_prob, entropy) = select_action(
+            env, obs, policy, temperature, deterministic
+        )
+        observations.append(obs)
+        actions.append(action)
+        log_probs.append(log_prob)
+        entropies.append(entropy)
+
+        # Advance the episode by executing the selected action.
+        (obs, reward, term, trunc, info) = env.step(action)
+        rewards.append(reward)
+        # term : whether the episode was terminated
+        # trunc : whether the episode was truncated (max_steps reached)
+        if term or trunc:
+            break
+    return (
+        observations,
+        actions,
+        torch.cat(log_probs),
+        rewards,
+        torch.stack(entropies),
+    )
+
+"""
+Function that evaluates a given policy in a specified environment.
+
+Runs the policy for a given number of episodes and returns:
+1. The average total reward per episode.
+2. The average episode length.
+
+Returns:
+    avg_reward (float): Average total reward over all episodes.
+    avg_length (float): Average length of episodes.
+"""
+def evaluate_policy(
+    env, policy, episodes=5, max_steps=1000, temperature=1.0, deterministic=False
+):
+    policy.eval()
+    total_rewards = []
+    lengths = []
+
+    for _ in range(episodes):
+        obs, _ = env.reset()
+        rewards = 0
+        for t in range(max_steps):
+            obs_tensor = torch.tensor(obs, dtype=torch.float32)
+            with torch.no_grad():
+                action, _, _ = select_action(
+                    env,
+                    obs_tensor,
+                    policy,
+                    temperature=temperature,
+                    deterministic=deterministic,
+                )
+            obs, reward, term, trunc, _ = env.step(action)
+            rewards += reward
+            if term or trunc:
+                break
+        total_rewards.append(rewards)
+        lengths.append(t + 1)
+
+    avg_reward = sum(total_rewards) / len(total_rewards)
+    avg_length = sum(lengths) / len(lengths)
+    policy.train()
+    return avg_reward, avg_length

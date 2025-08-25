@@ -134,6 +134,8 @@ Runs the policy for a given number of episodes and returns:
 Returns:
     avg_reward (float): Average total reward over all episodes.
     avg_length (float): Average length of episodes.
+    std_reward (float): Standard deviation of total rewards over all episodes.
+    std_length (float): Standard deviation of episode lengths over all episodes.
 """
 def evaluate_policy(
     env, policy, episodes=5, max_steps=1000, temperature=1.0, deterministic=False
@@ -162,7 +164,9 @@ def evaluate_policy(
         total_rewards.append(rewards)
         lengths.append(t + 1)
 
-    avg_reward = sum(total_rewards) / len(total_rewards)
-    avg_length = sum(lengths) / len(lengths)
+    avg_reward = np.mean(total_rewards)
+    std_reward = np.std(total_rewards)
+    avg_length = np.mean(lengths)
+    std_length = np.std(lengths)
     policy.train()
-    return avg_reward, avg_length
+    return avg_reward, avg_length, std_reward, std_length

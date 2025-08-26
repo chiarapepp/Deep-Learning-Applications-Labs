@@ -78,13 +78,13 @@ def reinforce(
     for episode in range(num_episodes):
 
         log = {}
-        # Compute temperature based on the selected scheduler
+        # Compute temperature based on the selected scheduler.
         if t_schedule is not None:
             if t_schedule == "linear":
                 decay_rate = (T_start - T_min) / num_episodes
                 T = max(T_min, T_start - decay_rate * episode)
             elif t_schedule == "exponential":
-                # Decay factor of the exp scheduler is hard coded to 0.999
+                # Decay factor of the exp scheduler is hard coded to 0.999.
                 T = max(T_min, T_start * (0.999**episode))
         else:
             T = T_start
@@ -99,7 +99,7 @@ def reinforce(
         returns = torch.tensor(compute_returns(rewards, gamma), dtype=torch.float32)
         obs_tensor = torch.stack(observations)
 
-        # Keep a running average of total discounted rewards for the whole episode.
+        # Keep a running exponential average of total discounted rewards for the whole episode.
         running_rewards.append(0.05 * returns[0].item() + 0.95 * running_rewards[-1])
 
         log["episode_length"] = len(returns)
@@ -113,7 +113,7 @@ def reinforce(
             values = value_network(obs_tensor)
             base_returns = returns - values.detach()
 
-            # Value loss (MSE between predicted value and return)
+            # Value loss (MSE between predicted value and return).
             value_loss = torch.nn.functional.mse_loss(values, returns)
             value_opt.zero_grad()
             value_loss.backward()
@@ -126,7 +126,7 @@ def reinforce(
 
         # Make an optimization step on the policy network.
         opt.zero_grad()
-        policy_loss = (-log_probs * base_returns - entropy_coeff * entropies).mean()
+        policy_loss = (-log_probs * base_returns - entropy_coeff * entropies).mean()   # helps with stability 
         policy_loss.backward()
         if clip_gradients:
             torch.nn.utils.clip_grad_norm_(policy.parameters(), max_norm=1.0)

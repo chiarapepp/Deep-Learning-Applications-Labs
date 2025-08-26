@@ -112,8 +112,9 @@ def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=Fals
         # Advance the episode by executing the selected action.
         (obs, reward, term, trunc, info) = env.step(action)
         rewards.append(reward)
-        # term : whether the episode was terminated
-        # trunc : whether the episode was truncated (max_steps reached)
+        # term : whether the episode was terminated (in the cartpole documentation this is said to happen 
+        # when the pole is no longer upright (angle > +-12 degrees or cart position > +- 2.4))
+        # trunc : whether the episode was truncated (max_steps reached).
         if term or trunc:
             break
     return (
@@ -123,6 +124,9 @@ def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=Fals
         rewards,
         torch.stack(entropies),
     )
+
+# Observation, cartpole truncation is set to 500 steps, while lunarlander is set to 1000, so that's why
+# max_steps is set to 1000 by default.
 
 """
 Function that evaluates a given policy in a specified environment.

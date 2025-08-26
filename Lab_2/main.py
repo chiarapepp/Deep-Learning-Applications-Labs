@@ -35,13 +35,15 @@ def parse_args():
 if __name__ == "__main__":
     
     args = parse_args()
-    torch.manual_seed(10)
+    seed = 10
+    torch.manual_seed(seed)
     if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(10)  
+        torch.cuda.manual_seed_all(seed)
 
     run = wandb.init(
         project="DLA_Lab_2",
         config={
+            "environment": args.env,
             "learning_rate": args.lr,
             "baseline": args.baseline,
             "gamma": args.gamma,

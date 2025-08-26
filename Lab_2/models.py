@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 """
-PolicyNetwork and ValueNetwork
+PolicyNetwork and ValueNetwork, defined to be independent of the environment.
+
 Args:
     env: The Gym environment used to determine input/output dimensions.
     num_layers (int): The number of hidden layers in the network.

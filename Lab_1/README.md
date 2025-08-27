@@ -28,7 +28,15 @@ lab1/
 
 ## ⚙️ How to Run
 
-You can run training from the command line using `main.py`. The script is fully configurable via command-line arguments.
+You can run training from the command line using `main.py`. The script is fully configurable via command-line arguments. 
+
+When using the MLP model, there are two main ways to define its architecture:
+
+Custom architecture with `--hidden_sizes`: You can provide a list of integers specifying the size of each hidden layer. This allows you to experiment freely with any layer configuration you like.
+
+Standard architecture with `--width` and `--depth`: If you want a setup that can be directly compared with ResMLP for a coherent evaluation of model structures, use the width (number of neurons per hidden layer) and depth (number of hidden layers) parameters. This ensures both MLP and ResMLP have a comparable number of layers and units. 
+
+Additionally, you can enable batch normalization after each hidden layer using the normalization flag.
 
 ### 🔧 Example: Train a ResMLP on MNIST
 
@@ -146,5 +154,7 @@ More material that supports those findings can be found inside the `wandb` proje
 
 - [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385) — He et al., 2016
 - [Learning Deep Features for Discriminative Localization](http://cnnlocalization.csail.mit.edu/) — Zhou et al., 2016
+
+https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L204
 
 

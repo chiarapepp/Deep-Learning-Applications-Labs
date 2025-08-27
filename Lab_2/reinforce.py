@@ -44,8 +44,8 @@ def reinforce(
     clip_gradients=False,
     deterministic=False,
     temperature=1.0,
-    entropy_coeff=0.01,
     t_schedule=None,
+    entropy_coeff=0.01,
 ):
 
     # Initial temperature and minimum temperature for the scheduler.
@@ -88,7 +88,7 @@ def reinforce(
                 T = max(T_min, T_start * (0.999**episode))
         else:
             T = T_start
-        log["temperature"] = T
+        log["temperature"] = T 
 
         # Run an episode of the environment, collect everything needed for policy update.
         (observations, actions, log_probs, rewards, entropies) = run_episode(
@@ -152,7 +152,7 @@ def reinforce(
                 f"[EVAL] Episode {episode} — Avg Reward: {avg_reward:.2f}, Avg Length: {avg_length:.2f}"
             )
             if deterministic:
-                avg_det_reward, avg_det_length = evaluate_policy(
+                avg_det_reward, avg_det_length, std_det_reward, std_det_length = evaluate_policy(
                     env,
                     policy,
                     episodes=eval_episodes,
@@ -161,6 +161,8 @@ def reinforce(
                 )
                 log["avg_det_reward"] = avg_det_reward
                 log["avg_det_length"] = avg_det_length
+                log["std_det_reward"] = std_det_reward
+                log["std_det_length"] = std_det_length
 
                 det_rewards.append(avg_det_reward)
                 det_lengths.append(avg_det_length)

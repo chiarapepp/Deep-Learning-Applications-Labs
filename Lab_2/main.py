@@ -26,6 +26,7 @@ def parse_args():
     parser.add_argument("--det", action="store_true", help="Enable deterministic policy evaluation every --eval-interval iterations")
     parser.add_argument("--T", type=float, default=1.0, help="Softmax temperature for the policy. If a temperature scheduler is used, this will be the starting temperature")
     parser.add_argument("--t_schedule", choices=["linear", "exponential"], help="Choose between a linear or exponential temperature scheduler")
+    parser.add_argument("--entropy_coeff", type=float, default=0.01, help="Coefficient for entropy regularization")
     parser.add_argument("--env", default="cartpole", choices=["cartpole", "lunarlander"], help="Choose between the Cartpole and the LunarLander environment")
     parser.set_defaults(visualize=False)
     args = parser.parse_args()
@@ -57,8 +58,9 @@ if __name__ == "__main__":
             "deterministic_eval": args.det,
             "temperature": args.T,
             "t_schedule": args.t_schedule,
+            "entropy_coeff": args.entropy_coeff,
         },
-        name=f"REINFORCE_{args.env}_baseline={args.baseline}_{args.det}_T={args.T}_t_schedule={args.t_schedule}_gamma={args.gamma}",
+        name=f"REINFORCE_{args.env}_baseline={args.baseline}_{args.det}_T={args.T}_t_schedule={args.t_schedule}_gamma={args.gamma}_lr={args.lr}",
     )
 
     # Instantiate the environment (no visualization)
@@ -90,6 +92,7 @@ if __name__ == "__main__":
         deterministic=args.det,
         temperature=args.T,
         t_schedule=args.t_schedule,
+        entropy_coeff=args.entropy_coeff,
     )
 
     if args.visualize:

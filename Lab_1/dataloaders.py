@@ -72,8 +72,8 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
     ds_val = Subset(ds_train, indices[:val_size])
     ds_train = Subset(ds_train, indices[val_size:])
     
-    train_dataloader = DataLoader(ds_train, batch_size=batch_size, shuffle=True, num_workers=num_workers) # pin_memory=True)
-    val_dataloader = DataLoader(ds_val, batch_size=batch_size, shuffle=False, num_workers=num_workers) # pin_memory=True)
-    test_dataloader = DataLoader(ds_test, batch_size=batch_size, shuffle=False, num_workers=num_workers) # pin_memory=True)
+    train_dataloader = DataLoader(ds_train, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
+    val_dataloader = DataLoader(ds_val, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+    test_dataloader = DataLoader(ds_test, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
 
     return train_dataloader, val_dataloader, test_dataloader, classes, input_size

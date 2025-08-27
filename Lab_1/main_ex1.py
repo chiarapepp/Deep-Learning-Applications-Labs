@@ -8,7 +8,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from models import MLP, ResMLP, CNN
 from dataloaders import get_dataloaders
-from utils import train, evaluate_model, gradient_norm
+from utils import gradient_norm
+from train_eval import train, evaluate_model
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -30,36 +31,31 @@ def parse_args():
                        help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001,
                        help='Learning rate')
-    
-    # MLP specific arguments
-    parser.add_argument('--hidden_sizes', type=int, nargs='+', default=[128, 64],
-                       help='Hidden layer sizes for MLP (list of integers)')
-    parser.add_argument('--hidden_dim', type=int, default=128,
-                       help='Hidden dimension for ResMLP')
-    parser.add_argument('--num_blocks', type=int, default=3,
-                       help='Number of residual blocks for ResMLP')
+
     parser.add_argument('--normalization', action='store_true',
                        help='Use batch normalization')
+    parser.add_argument('--use_scheduler', action='store_true',
+                       help='Use cosine learning rate scheduler')
+    
+    # MLP specific arguments
+    parser.add_argument('--hidden_sizes', type=int, nargs='+', default=None,
+                       help='Custom hidden layer sizes for MLP (list of integers), if not provided MLP uses width and depth parameters')
+    parser.add_argument('--width', type=int, default=128,
+                       help='Width of the MLP or the ResMLP')
+    parser.add_argument('--depth', type=int, default=2,
+                       help='Depth of the MLP or the ResMLP')
     
     # CNN-specific arguments
-    parser.add_argument('--layers', type=int, nargs='*', default=[2, 2, 2, 2],
-                        help='Layer configuration for the CNN')
-    parser.add_argument('--use_residual', action='store_true',
-                       help='Use residual connections in CNN')
-    parser.add_argument('--base_channels', type=int, default=32,
-                       help='Base number of channels for CNN')
+    # [2, 2, 2, 2] like a ResNet18, [3, 4, 6, 3] like a resnet34, [5, 6, 8, 5] like a resnet50
+    parser.add_argument("--layers", type=int, nargs="+", default=[2, 2, 2, 2],
+                        help="Number of layer pattern for the CNN Model")
+    parser.add_argument("--residual", type=bool, default=True, help="If True use skip connection")
 
-    # Data arguments
     parser.add_argument('--num_workers', type=int, default=4,
                        help='Number of data loading workers')
     parser.add_argument('--val_ratio', type=float, default=0.1,
                        help='Validation split ratio')
     
-    parser.add_argument('--use_scheduler', action='store_true',
-                       help='Use cosine learning rate scheduler')
-
-    parser.add_argument('--seed', type=int, default=10,
-                       help='Random seed for reproducibility')    
     parser.add_argument('--use_wandb', action='store_true',
                        help='Use Weights & Biases for logging')
 
@@ -78,11 +74,19 @@ def main():
     train_dataloader, val_dataloader, test_dataloader, classes, input_size = get_dataloaders(args.dataset, args.batch_size, num_workers = args.num_workers, val_ratio=args.val_ratio)
 
     if args.model == "mlp":
-        model = MLP(input_size, args.hidden_sizes, classes, args.normalization)
-        run_name = f"mlp_w{args.hidden_sizes}_d{len(args.hidden_sizes)}"
+        if args.hidden_sizes:  
+            hidden = args.hidden_sizes
+            run_name = f"mlp_custom{hidden}"
+        else:
+            hidden = [args.width] * args.depth
+            run_name = f"mlp_w{args.width}_d{args.depth}"
+
+        model = MLP(input_size, hidden, classes, args.normalization)
+
     elif args.model == "resmlp":
-        model = ResMLP(input_size, args.hidden_dim, args.num_blocks, classes, args.normalization)
-        run_name = f"resmlp_w{args.hidden_dim}_b{args.num_blocks}" 
+        model = ResMLP(input_size, args.width, args.depth, classes, args.normalization)
+        run_name = f"resmlp_w{args.width}_d{args.depth}"
+
     elif args.model == "cnn":
         model = CNN(args.layers, classes, args.use_residual)
         run_name = f"cnn_skip{args.use_residual}_layers{args.layers}"
@@ -97,7 +101,7 @@ def main():
     model = model.to(device)
     optimizer = torch.optim.Adam(params=model.parameters(), lr=args.lr)
 
-    train(model, run_name, optimizer, train_dataloader, val_dataloader, device, args)
+    train(model, optimizer, train_dataloader, val_dataloader, device, args)
 
     top1, top5, test_loss = evaluate_model(model, test_dataloader, device)
     if args.use_wandb:

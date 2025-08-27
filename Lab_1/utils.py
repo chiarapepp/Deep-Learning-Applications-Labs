@@ -4,103 +4,10 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
-
-"""
-Function that trains the model for one epoch.
-Computes loss, backpropagation, gradient norm, and logs metrics to Weights & Biases if enabled.
-"""
-
-def train_epoch(model, dataloader, optimizer, device, epoch, epochs):
-    model.train()
-    model = model.to(device)
-    losses = []
-    
-    train_bar = tqdm(dataloader, desc=f"Epoch {epoch + 1}/{epochs} [Training]", leave=False)
-    
-    for data, labels in train_bar:
-        data = data.to(device)
-        labels = labels.to(device)
-        optimizer.zero_grad()
-        logits = model(data)
-        loss = F.cross_entropy(logits, labels)
-        loss.backward()
-        optimizer.step()
-        losses.append(loss.item())
-        # Shows the current training loss
-        train_bar.set_postfix(minibatch_loss=f"{loss.item():.4f}")
-
-    return np.mean(losses)
-
-
-def train(model, run_name, optimizer, train_dataloader, val_dataloader, device, args):
-    train_bar = tqdm(range(args.epochs), desc=f"[Training epochs]")
-    scheduler = None
-    if args.use_scheduler:
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
-    
-    for epoch in train_bar:
-        train_loss = train_epoch(model, train_dataloader, optimizer, device, epoch, args.epochs)
-        test_acc_1, test_acc_5, avg_loss = evaluate_model(model, val_dataloader, device)
-
-        if scheduler is not None:
-            scheduler.step()
-
-        if args.use_wandb:
-            wandb.log(
-                {
-                "train_loss": train_loss,
-                "val_loss": avg_loss,
-                "val_acc_1": test_acc_1,
-                "val_acc_5": test_acc_5,
-                "epoch": epoch,
-                }, step=epoch)
-        train_bar.set_postfix(epoch_loss=f"{train_loss:.4f}")
-
-
-"""
-Function that evaluates the model on a test or validation dataset.
-Performs inference, computes cross-entropy loss, and calculates top-1 and top-5 accuracy.
-"""
-
-def evaluate_model(model, dataloader, device):
-    model.eval()
-    predictions = []
-    ground_truths = []
-    losses = []
-
-    top5_correct = 0
-    total_samples = 0
-
-    with torch.no_grad():
-        test_bar = tqdm(dataloader, desc=f"[Test/Validation]")
-
-        for data, labels in test_bar:
-            data = data.to(device)
-            labels = labels.to(device)
-
-            logits = model(data)
-            loss = F.cross_entropy(logits, labels)  # Classification Loss
-            prob = F.softmax(logits, dim=1)
-            pred = torch.argmax(prob, dim=1)
-
-            # Top-5 accuracy calculation
-            top5 = torch.topk(prob, k=5, dim=1).indices
-            top5_correct += sum([labels[i].item() in top5[i] for i in range(labels.size(0))])
-            total_samples += labels.size(0)
-
-            ground_truths.append(labels.cpu().numpy())
-            predictions.append(pred.cpu().numpy())
-            losses.append(loss.item())
-
-            test_bar.set_postfix(minibatch_loss=f"{loss.item():.4f}")
-
-    top5_accuracy = top5_correct / total_samples
-    top1_accuracy = accuracy_score(np.hstack(ground_truths), np.hstack(predictions))
-    avg_loss = np.mean(losses)
-
-    return top1_accuracy, top5_accuracy, avg_loss
-
+from models import CNN
 
 """
 Computes and plots the gradient norms of each layer's weights and biases 
@@ -150,4 +57,59 @@ def gradient_norm(model, dataloader, device, args):
     if args.use_wandb:
         wandb.log({"Gradient Norm Plot": wandb.Image(plt)})
 
-    
+"""
+Extracts feature representations from the model for all samples in the dataloader.
+
+This function uses the model's (CNN) feature extractor to obtain latent embeddings 
+(512-dimensional vectors) that can later be used to train a separate classifier.
+"""
+
+def extract_features(model, dataloader, device):
+    model.eval()
+    features = []
+    labels = []
+    with torch.no_grad():
+        for x, y in dataloader:
+            x = x.to(device)
+            feat = model.get_features(x)  # 512-d feature vector
+            features.append(feat.cpu().numpy())
+            labels.append(y.numpy())
+    return np.vstack(features), np.hstack(labels)
+
+# Observe: the outputs are numpy arrays
+
+"""
+Function that trains a Linear SVM from sklearn on extracted features 
+and evaluate accuracy. Will be used as baseline.
+"""
+
+def evaluate_with_svm(train_features, train_labels, val_features, val_labels, test_features=None, test_labels=None):
+
+    # Ensure numpy arrays (in case of lists or improperly converted tensors arrive)
+    train_features, train_labels = np.array(train_features), np.array(train_labels)
+    val_features, val_labels = np.array(val_features), np.array(val_labels)
+    if test_features is not None and test_labels is not None:
+        test_features, test_labels = np.array(test_features), np.array(test_labels)
+
+    # Normalize features
+    scaler = StandardScaler()
+    train_features_scaled = scaler.fit_transform(train_features)
+    val_features_scaled = scaler.transform(val_features)
+    if test_features is not None:
+        test_features_scaled = scaler.transform(test_features)
+
+    clf = SVC(kernel='linear')
+    clf.fit(train_features_scaled, train_labels)
+
+    val_preds = clf.predict(val_features_scaled)
+    val_acc = accuracy_score(val_labels, val_preds)
+
+    results = {"val_acc": val_acc}
+
+    # Optional test accuracy
+    if test_features is not None and test_labels is not None:
+        test_preds = clf.predict(test_features_scaled)
+        test_acc = accuracy_score(test_labels, test_preds)
+        results["test_acc"] = test_acc
+
+    return results

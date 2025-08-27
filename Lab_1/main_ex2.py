@@ -1,170 +1,122 @@
-import cv2
 import argparse
-import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
+from html import parser
+import os
+import wandb
 import torch
 import torch.nn.functional as F
-from torchvision import transforms
-from torchvision.models import resnet18, ResNet18_Weights
-from torchvision.datasets import Imagenette
-from torch.utils.data import DataLoader
-import os
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+from models import MLP, ResMLP, CNN
+from dataloaders import get_dataloaders
+from utils import gradient_norm, extract_features, evaluate_with_svm
+from train_eval import train, evaluate_model
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Class Activation Maps for pretrained ResNet-18 on Imagenette dataset"
+        description="Laboratory 1 : Fine-tuning a pre-trained CNN on a new classification task " \
+        "with optional linear evaluation."
     )
-    parser.add_argument("--class_index", type=int, default=0,
-                        help="Class index (0-9) for Imagenette")
-    parser.add_argument("--num_samples", type=int, default=5,
-                        help="Number of samples to analyze per class")
-    parser.add_argument("--analyze_all", action='store_true',
-                        help="Analyze samples from all classes")
-    parser.add_argument("--save_results", action='store_true',
-                        help="Save CAM visualizations to files")
-    return parser.parse_args()
 
-IMAGENETTE_CLASSES = [
-    "tench", "English springer", "cassette player", "chain saw", "church",
-    "French horn", "garbage truck", "gas pump", "golf ball", "parachute"
-]
+    # Training arguments
+    parser.add_argument("--epochs", type=int, default=75, help="Number of train epochs")
+    parser.add_argument("--batch_size", type=int, default=128, help="Batch size of the dataloaders")
+    parser.add_argument("--freeze_layers", type=str, default="layer1,layer2", 
+                    help="Comma-separated list of layer names to freeze")
+    parser.add_argument("--lr", type=float, default=0.005, help="Learning rate for the optimizer")
+    parser.add_argument("--optimizer", type=str, choices=["SGD", "Adam"], default="SGD", help="Choose optimizer from SGD or ADAM")
+    parser.add_argument("--momentum", type=float, default=0.9, help="Momentum for SGD optimizer")
 
-IMAGENETTE_TO_IMAGENET = {
-    0: 0, 1: 217, 2: 482, 3: 491, 4: 497,
-    5: 566, 6: 569, 7: 571, 8: 574, 9: 701
-}
+    parser.add_argument("--path", type=str, default=None, help="Path to the pretrained model of the CNN on CIFAR10")
+    
+    # CNN-specific arguments
+    # [2, 2, 2, 2] like a ResNet18, [3, 4, 6, 3] like a resnet34, [5, 6, 8, 5] like a resnet50
+    parser.add_argument("--layers", type=int, nargs="+", default=[2, 2, 2, 2],
+                        help="Number of layer pattern for the CNN Model")
+    parser.add_argument("--use_residual",action='store_true', help="Use skip connection")
 
-class CAMVisualizer:
-    def __init__(self, device):
-        self.device = device
-        self.net = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1).to(device)
-        self.net.eval()
-        self.features_blobs = []
-        self.finalconv_name = "layer4"
-        self.net._modules.get(self.finalconv_name).register_forward_hook(self.hook_feature)
-        self.weight_softmax = self.net.fc.weight.data.cpu().numpy()
-        self.imagenet_classes = ResNet18_Weights.IMAGENET1K_V1.meta["categories"]
-        self.preprocess = transforms.Compose([
-            transforms.Resize(160),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-        ])
+    parser.add_argument('--num_workers', type=int, default=4,
+                       help='Number of data loading workers')
+    parser.add_argument('--val_ratio', type=float, default=0.1,
+                       help='Validation split ratio')
+    
+    parser.add_argument('--use_wandb', action='store_true',
+                       help='Use Weights & Biases for logging')
 
-    def hook_feature(self, module, input, output):
-        self.features_blobs.append(output.data.cpu().numpy())
+    args = parser.parse_args()
+    return args
 
-    def generate_cam(self, feature_conv, class_idx, img_size=(224,224)):
-        bz, nc, h, w = feature_conv.shape
-        output_cam = []
-        for idx in class_idx:
-            cam = self.weight_softmax[idx].dot(feature_conv.reshape((nc, h*w)))
-            cam = cam.reshape(h, w)
-            cam = cam - np.min(cam)
-            if np.max(cam) > 0:
-                cam_img = cam / np.max(cam)
-            else:
-                cam_img = cam
-            cam_img = np.uint8(255 * cam_img)
-            output_cam.append(cv2.resize(cam_img, img_size))
-        return output_cam
-
-    def predict_and_visualize(self, img_pil, true_label=None, save_path=None):
-        self.features_blobs.clear()
-        img_tensor = self.preprocess(img_pil).unsqueeze(0).to(self.device)
-        logit = self.net(img_tensor)
-        h_x = F.softmax(logit, dim=1).data.squeeze()
-        probs, idx = h_x.sort(0, True)
-        probs = probs.cpu().numpy()
-        idx = idx.cpu().numpy()
-
-        print("\nTop-5 predictions:")
-        for i in range(5):
-            print(f"{probs[i]:.3f} -> {self.imagenet_classes[idx[i]]}")
-
-        CAMs = self.generate_cam(self.features_blobs[0], [idx[0]])
-        self.visualize_cam(img_pil, CAMs[0], idx[0], probs[0], true_label, save_path)
-        return idx[0], probs[0]
-
-    def visualize_cam(self, img_pil, cam, pred_class_idx, confidence, true_label=None, save_path=None):
-        img_cv = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-        img_cv = cv2.resize(img_cv, (224,224))
-        heatmap = cv2.applyColorMap(cam, cv2.COLORMAP_JET)
-        result = heatmap * 0.4 + img_cv * 0.6
-        result_display = cv2.cvtColor(result.astype(np.uint8), cv2.COLOR_BGR2RGB)
-
-        fig, axes = plt.subplots(1,3, figsize=(15,5))
-        axes[0].imshow(img_pil)
-        title = "Original Image"
-        if true_label is not None:
-            title += f"\nTrue: {IMAGENETTE_CLASSES[true_label]}"
-        axes[0].set_title(title)
-        axes[0].axis('off')
-
-        axes[1].imshow(cam, cmap='jet')
-        axes[1].set_title(f"CAM\nPredicted: {IMAGENETTE_CLASSES[pred_class_idx]}\nConfidence: {confidence:.3f}")
-        axes[1].axis('off')
-
-        axes[2].imshow(result_display)
-        axes[2].set_title("CAM Overlay")
-        axes[2].axis('off')
-
-        plt.tight_layout()
-        if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"Saved CAM visualization to {save_path}")
-        plt.show()
-        return result_display
-
-def load_imagenette_data():
-    transform = transforms.Compose([
-        transforms.Resize(160),
-        transforms.CenterCrop(224),
-        transforms.ToTensor()
-    ])
-    val_dataset = Imagenette(root='./data', split='val', download=True, transform=transform)
-    val_loader = DataLoader(val_dataset, batch_size=1, shuffle=False)
-    return val_loader, val_dataset
-
-def denormalize_tensor(tensor):
-    tensor = torch.clamp(tensor,0,1)
-    transform = transforms.ToPILImage()
-    return transform(tensor)
-
-def analyze_class_samples(cam_visualizer, val_loader, class_idx, num_samples=5, save_results=False):
-    print(f"\n{'='*60}")
-    print(f"Analyzing Class: {IMAGENETTE_CLASSES[class_idx]}")
-    print(f"{'='*60}")
-    samples_found = 0
-    for batch_idx, (data, target) in enumerate(val_loader):
-        if target.item() == class_idx and samples_found < num_samples:
-            img_pil = denormalize_tensor(data.squeeze(0))
-            save_path = None
-            if save_results:
-                os.makedirs('cam_results', exist_ok=True)
-                save_path = f'cam_results/cam_{IMAGENETTE_CLASSES[class_idx]}_sample_{samples_found+1}.png'
-            cam_visualizer.predict_and_visualize(img_pil, true_label=target.item(), save_path=save_path)
-            samples_found += 1
 
 def main():
+
     args = parse_args()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    DATASET = "CIFAR100"
 
-    cam_visualizer = CAMVisualizer(device)
-    val_loader, val_dataset = load_imagenette_data()
-    print(f"Dataset loaded: {len(val_dataset)} validation samples")
+    torch.manual_seed(10)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(10)
 
-    if args.analyze_all:
-        for class_idx in range(len(IMAGENETTE_CLASSES)):
-            analyze_class_samples(cam_visualizer, val_loader, class_idx, args.num_samples, args.save_results)
-    else:
-        if args.class_index < 0 or args.class_index >= len(IMAGENETTE_CLASSES):
-            print(f"Error: class_index must be between 0 and {len(IMAGENETTE_CLASSES)-1}")
-            return
-        analyze_class_samples(cam_visualizer, val_loader, args.class_index, args.num_samples, args.save_results)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    layers_to_freeze = args.freeze_layers.split(",")
+
+    train_dataloader, val_dataloader, test_dataloader, classes, input_size = get_dataloaders(DATASET, args.batch_size, num_workers = args.num_workers, val_ratio=args.val_ratio)
+
+    # Load the pretrained CNN (CIFAR10)
+    model_cifar10 = CNN(args.layers, classes=10, residual=True).to(device)
+    model_cifar10.load_state_dict(torch.load(args.path, map_location=device))
+
+    # Feature extraction  
+    train_features, train_labels = extract_features(model_cifar10, train_dataloader, device)
+    validation_features, validation_labels = extract_features(model_cifar10, val_dataloader, device)
+    test_features, test_labels = extract_features(model_cifar10, test_dataloader, device)
+
+    #Get the accuracy on the validation/test set using a Linear SVM on the extracted features.
+    val_accuracy, test_accuracy = evaluate_with_svm(train_features, train_labels, validation_features, validation_labels , test_features, test_labels)
+    print(f"Baseline Linear SVM - Val Acc: {val_accuracy}") 
+    print(f"Baseline Linear SVM - Test Acc: {test_accuracy}")
+
+    # Setup CIFAR-100
+    model = CNN(args.layers, classes=100, residual=True).to(device)
+    model.load_state_dict(model_cifar10.state_dict(), strict=False)  # load weights except for the final layer.
+    model.fc = torch.nn.Linear(model.fc.in_features, 100)             # new classifier head.
+    torch.nn.init.normal_(model.fc.weight, mean=0.0, std=0.01)
+    torch.nn.init.zeros_(model.fc.bias)
+
+    for name, param in model.named_parameters():
+        if any(layer_name in name for layer_name in layers_to_freeze):
+            param.requires_grad = False
+            print(f"Freezing layer: {name}")
+
+    run_name = f"finetune_cnn_skip_{args.use_residual}_layers{args.layers}_freeze_{args.freeze_layers}"
+
+    if args.use_wandb:
+        wandb.init(
+            project='DLA_Lab_1',
+            name=run_name,
+            config=args
+        )
+
+    if args.optimizer == "SGD":
+        optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, momentum=args.momentum)
+    if args.optimizer == "Adam":
+        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
+
+    train(model, optimizer, train_dataloader, val_dataloader, device, args)
+
+    top1, top5, test_loss = evaluate_model(model, test_dataloader, device)
+
+    if args.use_wandb:
+        wandb.log({
+        "test_accuracy": top1,
+        "test_top5_accuracy": top5
+        }, step=args.epochs)
+
+    print(f"Final Test Results:")
+    print(f"Top-1 Accuracy: {top1:.4f}")
+    print(f"Top-5 Accuracy: {top5:.4f}")
+    print(f"Test Loss: {test_loss:.4f}")
+
+    os.makedirs("Models", exist_ok=True)
+    torch.save(model.state_dict(), "Models/"+run_name+".pth")
 
 if __name__ == "__main__":
     main()

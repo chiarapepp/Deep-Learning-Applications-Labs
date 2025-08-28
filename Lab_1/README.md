@@ -1,15 +1,15 @@
 # Laboratory 1 - Deep Neural Networks: MLPs, ResMLPs, and CNNs
 
-This lab focuses on training deep models—**MLPs**, **Residual MLPs**, and **CNNs**—on standard image classification datasets (MNIST, CIFAR10). The key objectives are:
+## Overview
+This laboratory explores deep neural network architectures and their training dynamics, with a focus on training deep models—MLPs, Residual MLPs, and CNNs—on standard image classification datasets (MNIST, CIFAR10). The key objectives are:
 
-- Reproducing results (at a smaller scale) from:
-  - 📄 [*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385) (He et al., CVPR 2016)
+- Reproducing results (at a smaller scale) from the paper:[*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385)
 - Understanding the effect of residual connections on model performance.
 - Investigating training dynamics and gradient flow.
+- Exploring transfer learning through fine-tuning techniques.
 
----
 
-## Project Structure
+### Project Structure
 
 ```
 Lab_1/
@@ -24,45 +24,29 @@ Lab_1/
 └── README.md            # This file
 ```
 
+### Implemented Models
+- 1. **MLP (Multilayer Perceptron)**
+  - Configurable hidden layer sizes.
+  - Optional batch normalization.
+  - Standard feedforward architecture.
+- 2. **ResMLP (Residual MLP)**
+  - MLP with residual connections between blocks.
+  - Each block contains two linear layers with skip connections.
+  - Configurable depth and width.
+  - Demonstrates residual learning benefits on MLPs.
+- 3. **CNN (Convolutional Neural Network)**
+  - ResNet-style architecture with BasicBlocks
+  - Configurable layer patterns: [2,2,2,2], [3,4,6,3], [5,6,8,5]
+  - Optional residual connections (can be disabled for comparison)
+  - Feature extraction capabilities for transfer learning
 
-## 📋 Project Overview
-
-The laboratory is divided into two main exercises:
-
-**Exercise 1**: Verification of ResNet findings on MLPs and CNNs
-- **1.1**: Baseline MLP implementation
-- **1.2**: MLP with residual connections (ResMLP)
-- **1.3**: CNN with/without residual connections
-
-**Exercise 2**: Fine-tuning and transfer learning
-- **2.1**: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100
-
-
-## 🧠 Model Implementations
-
-### 1. MLP (Multilayer Perceptron)
-- Configurable depth and width
-- Optional batch normalization
-- Standard feedforward architecture
-
-### 2. ResMLP (Residual MLP)
-- Residual blocks with skip connections
-- Identical capacity to MLP for fair comparison
-- Demonstrates residual learning benefits on MLPs
-
-### 3. CNN (Convolutional Neural Network)
-- ResNet-style architecture with BasicBlocks
-- Configurable layer patterns: [2,2,2,2], [3,4,6,3], [5,6,8,5]
-- Optional residual connections (can be disabled for comparison)
-- Feature extraction capabilities for transfer learning
-
-## 📊 Datasets
+### Datasets
 
 - **MNIST**: 28×28 grayscale digit classification (10 classes)
 - **CIFAR-10**: 32×32 color image classification (10 classes)
 - **CIFAR-100**: 32×32 color image classification (100 classes)
 
-## 🚀 Usage
+## Usage
 
 ### Quick Start
 
@@ -76,15 +60,13 @@ pip install torch torchvision tqdm matplotlib scikit-learn wandb numpy
 wandb login
 ```
 
-3. **Run all experiments**:
-```bash
-chmod +x run_experiments.sh
-./run_experiments.sh
-```
 
-### Individual Experiments
+## Exercise 1: Verification of ResNet findings on MLPs and CNNs
+Train and evaluate MLPs and CNNs on MNIST/CIFAR-10 with various depths, widths, normalization, residual connections, and schedulers.
 
-#### Exercise 1.1 & 1.2: MLP Experiments
+### MLP
+The training can be done from the command line using main_ex1.py. The script is fully configurable via command-line arguments.
+
 ```bash
 # Standard MLP on MNIST
 python main_ex1.py --model mlp --dataset MNIST --depth 10 --width 128 --epochs 50
@@ -95,8 +77,33 @@ python main_ex1.py --model resmlp --dataset MNIST --depth 10 --width 128 --epoch
 # With batch normalization and scheduler
 python main_ex1.py --model resmlp --dataset MNIST --depth 20 --width 128 --normalization --use_scheduler --epochs 50
 ```
+When using the MLP (not ResMLP) model, there are two main ways to define its architecture: 
 
-#### Exercise 1.3: CNN Experiments
+Custom architecture with `--hidden_sizes`: You can provide a list of integers specifying the size of each hidden layer. This allows you to experiment freely with any layer configuration you like.
+
+Standard architecture with `--width` and `--depth`: If you want a setup that can be directly compared with ResMLP for a coherent evaluation of model structures, use the width (number of neurons per hidden layer) and depth (number of hidden layers) parameters. This ensures both MLP and ResMLP have a comparable number of layers and units. 
+
+All the arguments possibilmente usabili sono di seguito. 
+
+#### Common Arguments
+- `--epochs`: Number of training epochs (default: 50 for MLPs, 75 for CNNs).
+- `--batch_size`: Batch size (default: 128).
+- `--lr`: Learning rate (default: 0.001).
+- `--num_workers`: Data loading workers (default: 4).
+- `--use_wandb`: Enable Weights & Biases logging.
+- `--use_scheduler`: Use cosine annealing scheduler.
+
+#### MLP/ResMLP Specific
+- `--model`: Choose 'mlp' or 'resmlp'.
+- `--hidden_size`: Only for 'mlp', custom architecture (list of integers specifying the size of each hidden layer). 
+- `--depth`: Number of hidden layers.
+- `--width`: Hidden layer size.
+- `--normalization`: Enable batch normalization.
+
+### CNN 
+The implementation of the CNN models relies on the 'BasicBlock' definition in [torchvision](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L59).
+To train the CNN, it's possible to use 
+
 ```bash
 # CNN with residual connections (ResNet-18 style)
 python main_ex1.py --model cnn --dataset CIFAR10 --layers 2 2 2 2 --use_residual --epochs 75
@@ -108,7 +115,18 @@ python main_ex1.py --model cnn --dataset CIFAR10 --layers 2 2 2 2 --epochs 75
 python main_ex1.py --model cnn --dataset CIFAR10 --layers 3 4 6 3 --use_residual --use_scheduler --epochs 75
 ```
 
-#### Exercise 2.1: Fine-tuning Experiments
+Oltre common arguments visti sopra ci sono tali arguments specifici per la CNN.
+
+#### CNN Specific
+- `--model`: 'cnn' (obbligatorio).
+- `--layers`: Layer pattern (e.g., 2 2 2 2 for ResNet-18).
+- `--use_residual`: Enable residual connections.
+
+## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100
+
+
+
+#### Fine-tuning Experiments
 ```bash
 # Linear evaluation (freeze all layers)
 python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "layer1,layer2,layer3,layer4" --optimizer SGD --lr 1e-3 --epochs 75
@@ -117,30 +135,23 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "layer1,layer2" --optimizer Adam --lr 1e-3 --use_scheduler --epochs 75
 ```
 
-### Command Line Arguments
-
-#### Common Arguments
-- `--epochs`: Number of training epochs (default: 50 for MLPs, 75 for CNNs)
-- `--batch_size`: Batch size (default: 128)
-- `--lr`: Learning rate (default: 0.001)
-- `--num_workers`: Data loading workers (default: 4)
-- `--use_wandb`: Enable Weights & Biases logging
-- `--use_scheduler`: Use cosine annealing scheduler
-
-#### MLP/ResMLP Specific
-- `--model`: Choose 'mlp' or 'resmlp'
-- `--depth`: Number of hidden layers
-- `--width`: Hidden layer size
-- `--normalization`: Enable batch normalization
-
-#### CNN Specific
-- `--layers`: Layer pattern (e.g., 2 2 2 2 for ResNet-18)
-- `--use_residual`: Enable residual connections
-
 #### Fine-tuning Specific
 - `--path`: Path to pre-trained model
 - `--freeze_layers`: Comma-separated layer names to freeze
 - `--optimizer`: 'SGD' or 'Adam'
+
+
+
+3. **Run all experiments**:
+```bash
+chmod +x run_experiments.sh
+./run_experiments.sh
+```
+
+
+
+
+
 
 ## 🔬 Key Experiments and Expected Results
 
@@ -164,26 +175,7 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 - Model comparison dashboards
 - Hyperparameter tracking
 
-### Local Logging
-- Individual experiment logs in `logs/` directory
-- Model checkpoints saved in `Models/` directory
-- Gradient analysis plots
 
-## 🔧 Implementation Details
-
-### Key Features
-- **Modular Design**: Easy to extend and modify
-- **Gradient Analysis**: Built-in gradient norm computation
-- **Feature Extraction**: CNN feature extraction for transfer learning
-- **Flexible Architecture**: Configurable model depths and widths
-- **Reproducibility**: Fixed random seeds for consistent results
-
-### Technical Highlights
-- Custom ResNet implementation with optional skip connections
-- Efficient data loading with proper normalization
-- Top-1 and Top-5 accuracy computation
-- Learning rate scheduling support
-- Memory-efficient feature extraction
 
 ## 📚 Key Findings
 
@@ -201,84 +193,19 @@ The experiments demonstrate:
 
 - [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385) — He et al., 201
 - [](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L204)
-## ⚙️ How to Run
-
-You can run training from the command line using `main.py`. The script is fully configurable via command-line arguments. 
-
-When using the MLP model, there are two main ways to define its architecture:
-
-Custom architecture with `--hidden_sizes`: You can provide a list of integers specifying the size of each hidden layer. This allows you to experiment freely with any layer configuration you like.
-
-Standard architecture with `--width` and `--depth`: If you want a setup that can be directly compared with ResMLP for a coherent evaluation of model structures, use the width (number of neurons per hidden layer) and depth (number of hidden layers) parameters. This ensures both MLP and ResMLP have a comparable number of layers and units. 
-
-Additionally, you can enable batch normalization after each hidden layer using the normalization flag.
-
-### 🔧 Example: Train a ResMLP on MNIST
-
-```bash
-python main.py --model resmlp --dataset mnist --depth 4 --width 64 --bn --use-wandb
-```
-
-### 🔧 Example: Train a CNN with skip connections on CIFAR10
-
-```bash
-python main.py --model cnn --dataset cifar10 --skip --layers 2 2 2 2 --use-wandb
-```
-
----
-
-## 🧠 `main.py` - Supported Arguments
-
-This script provides an entry point to train MLP, ResMLP(MLP with Residual connections), CNNs and ResNet models. 
-The implementation of the CNN models relies on the 'BasicBlock' definition in [torchvision](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L59)
-
-| Argument         | Description |
-|------------------|-------------|
-| `--model`        | Model type to use: `mlp`, `resmlp`, `cnn` |
-| `--dataset`      | Dataset to use: `mnist`, `cifar10`, `cifar100` |
-| `--lr`           | Learning rate (default: 0.001) |
-| `--epochs`       | Number of training epochs (default: 50) |
-| `--batch-size`   | Batch size (default: 256) |
-| `--depth`        | Number of hidden layers (MLP/ResMLP only) |
-| `--width`        | Width of hidden layers (MLP/ResMLP only) |
-| `--bn`           | Use BatchNorm (only MLP/ResMLP) |
-| `--skip`         | Enable skip connections in CNN |
-| `--layers`       | CNN block configuration (default: `[2 2 2 2]`) |
-| `--schedule`     | LR drop milestones (e.g., `--schedule 35`) |
-| `--cos`          | Use cosine LR scheduling |
-| `--val-split`    | Fraction of training data used for validation (default: 0.1) |
-| `--seed`         | Set random seed for reproducibility |
-| `--device`       | Device to use: `cpu` or `cuda` |
-| `--use-wandb`    | Enable Weights & Biases logging |
 
 
-## 🧠 `main_cam.py` – Supported Arguments
 
-This script generates Class Activation Maps (CAMs) using a pretrained ResNet18 on the **Imagenette** dataset.
+ 
+## Visualizations & Logging
 
-| Argument        | Aliases                          | Type   | Default | Description |
-|----------------|----------------------------------|--------|---------|-------------|
-| `--class_index` | `--cls_index`, `--class_idx`, `--cls` | `int`  | `0`     | Class index of the input image. Choose from:<br> `tench (0)`, `English springer (1)`, `cassette player (2)`, `chainsaw (3)`, `church (4)`, `French horn (5)`, `garbage truck (6)`, `gas pump (7)`, `golf ball (8)`, `parachute (9)` |
-| `--sample_index` | `--sample_idx`, `--sample`       | `int`  | `5`     | Index of the image sample to visualize within the selected class. |
-| `--url`         | –                                | `str`  | `""`    | URL of a custom input image from the Imagenette dataset. If provided, it overrides `--class_index` and `--sample_index`. |
+If `--use_wandb` is enabled, training metrics and model summaries are logged to:
 
-> 📌 Note: If you provide a URL, the `class_index` and `sample_index` are ignored.
-
----
-
-## 📊 Visualizations & Logging
-
-If `--use-wandb` is enabled, training metrics and model summaries are logged to:
-
-🔗 [W&B Project – Lab 1](https://wandb.ai/jaysenoner/lab_1_DLA?nw=nwuserjaysenoner1999)
+🔗 [W&B Project – DLA_Lab_1](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_1?nw=nwuserchiarapeppicelli)
 
 You can view:
 
-- Learning curves
-- Validation accuracy
-- Test Top-1 and Top-5 accuracy
-- Parameter counts
-- Model summaries
+- TO ADD
 
 ---
 
@@ -328,60 +255,4 @@ More material that supports those findings can be found inside the `wandb` proje
 
 
 
-
-
-
------------------------------------
-'''
-# =============================================================================
-# EXERCISE 2.1: FINE-TUNING EXPERIMENTS 
-# =============================================================================
-
-# -----------------------------------------------------------------------------
-# Linear Evaluation - Freeze All Layers 
-# -----------------------------------------------------------------------------
-echo "🔹 Linear Evaluation - Freeze ALL layers"
-echo "  └── Testing SGD vs Adam with different learning rates"
-echo ""
-python main_ex2.py --lr 1e-3 --optimizer SGD --use_scheduler --freeze_layers "layer1,layer2,layer3,layer4" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer SGD --freeze_layers "layer1,layer2,layer3,layer4" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer SGD --use_scheduler --freeze_layers "layer1,layer2,layer3,layer4" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer SGD --freeze_layers "layer1,layer2,layer3,layer4" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer Adam --use_scheduler --freeze_layers "layer1,layer2,layer3,layer4" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer Adam --freeze_layers "layer1,layer2,layer3,layer4" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer Adam --use_scheduler --freeze_layers "layer1,layer2,layer3,layer4" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer Adam --freeze_layers "layer1,layer2,layer3,layer4" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-
-# -----------------------------------------------------------------------------
-# Partial Fine-tuning - Freeze Early Layers (8 experiments)
-# -----------------------------------------------------------------------------
-echo "🔹 Partial Fine-tuning - Freeze layer1,layer2 (8 experiments)..."
-echo "  └── Unfreeze layer3,layer4 for adaptation"
-echo ""
-python main_ex2.py --lr 1e-3 --optimizer SGD --use_scheduler --freeze_layers "layer1,layer2" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer SGD --freeze_layers "layer1,layer2" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer SGD --use_scheduler --freeze_layers "layer1,layer2" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer SGD --freeze_layers "layer1,layer2" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer Adam --use_scheduler --freeze_layers "layer1,layer2" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer Adam --freeze_layers "layer1,layer2" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer Adam --use_scheduler --freeze_layers "layer1,layer2" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer Adam --freeze_layers "layer1,layer2" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-
-# -----------------------------------------------------------------------------
-# Full Fine-tuning - Freeze Only First Layer (8 experiments)
-# -----------------------------------------------------------------------------
-echo "🔹 Full Fine-tuning - Freeze only layer1 (8 experiments)..."
-echo "  └── Unfreeze layer2,layer3,layer4 for full adaptation"
-echo ""
-python main_ex2.py --lr 1e-3 --optimizer SGD --use_scheduler --freeze_layers "layer1" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer SGD --freeze_layers "layer1" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer SGD --use_scheduler --freeze_layers "layer1" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer SGD --freeze_layers "layer1" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer Adam --use_scheduler --freeze_layers "layer1" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-3 --optimizer Adam --freeze_layers "layer1" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer Adam --use_scheduler --freeze_layers "layer1" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-python main_ex2.py --lr 1e-2 --optimizer Adam --freeze_layers "layer1" --path "Models/cnn_skip_True_layers[2, 2, 2, 2].pth" --layers 2 2 2 2
-
-echo "✅ Fine-tuning experiments completed! (108/108)"
-echo ""
 

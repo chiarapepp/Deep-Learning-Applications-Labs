@@ -1,288 +1,225 @@
 #!/bin/bash
 
 # =============================================================================
-# ESPERIMENTI SISTEMATICI ADATTATI AL TUO CODICE
-# Ispirato agli esperimenti del tuo amico ma adattato alla tua interfaccia
+# Deep Learning Applications - Laboratory 1
+# =============================================================================
+# 
+# This script runs:
+# - 72 MLP experiments (3 depths × 3 widths × 8 configurations)
+# - 12 CNN experiments (3 architectures × 4 configurations) 
+# - 24 Fine-tuning experiments (3 freeze strategies × 8 configurations)
+#
 # =============================================================================
 
-echo "Running systematic experiments (inspired by friend's design)..."
-mkdir -p Models logs results
-
-# Parametri base
-lr=0.001
-epochs=50
-batch_size=128
-dataset="MNIST"
+# Create necessary directory
+mkdir -p Models 
 
 # =============================================================================
-# DEPTH STUDY: Confronto MLP vs ResMLP a diverse profondità
+# EXERCISE 1.1 & 1.2: MLP EXPERIMENTS
 # =============================================================================
-
-echo "=== DEPTH STUDY ==="
-
-# Depth 10 → num_blocks = 5 (circa)
-depths=(
-    "128,64,32,16,8,4,2,1,1,1"          # MLP 10 layer
-    "5"                                  # ResMLP 5 blocks
-)
-
-# Depth 20 → num_blocks = 10 (circa)  
-depths_20=(
-    "128,128,64,64,32,32,16,16,8,8,4,4,2,2,1,1,1,1,1,1"  # MLP 20 layer
-    "10"                                                   # ResMLP 10 blocks
-)
-
-# Depth 40 → num_blocks = 20 (circa)
-depths_40=(
-    # Per MLP molto profondo, usa hidden_sizes ripetute
-    "20"  # ResMLP 20 blocks (troppo lungo fare MLP a 40 layer)
-)
-
-# =============================================================================
-# WIDTH STUDY: Diverse larghezze
-# =============================================================================
-
-widths=(32 64 128)
-
-# =============================================================================
-# ESPERIMENTI SISTEMATICI
-# =============================================================================
-
-experiment_counter=0
-
-for width in "${widths[@]}"; do
-    echo "Testing width: $width"
-    
-    # SHALLOW NETWORKS (depth ~10)
-    echo "  Shallow networks (~10 layers)"
-    
-    # MLP shallow con/senza normalization, con/senza scheduler
-    for normalization in "" "--normalization"; do
-        for scheduler in "" "--use_scheduler"; do
-            experiment_counter=$((experiment_counter + 1))
-            echo "    Experiment $experiment_counter: MLP shallow, width=$width"
-            
-            if [ $width -eq 32 ]; then
-                hidden_sizes="$width $((width/2)) $((width/4)) $((width/8))"
-            elif [ $width -eq 64 ]; then  
-                hidden_sizes="$width $((width/2)) $((width/4)) $((width/8)) $((width/16))"
-            else
-                hidden_sizes="$width $((width/2)) $((width/4)) $((width/8)) $((width/16)) $((width/32))"
-            fi
-            
-            python main_ex1.py \
-                --model mlp \
-                --dataset $dataset \
-                --hidden_sizes $hidden_sizes \
-                --lr $lr \
-                --epochs $epochs \
-                --batch_size $batch_size \
-                $normalization \
-                $scheduler \
-                --use_wandb \
-                2>&1 | tee results/exp${experiment_counter}_mlp_shallow_w${width}_norm${normalization}_sched${scheduler}.log &
-                
-            sleep 2
-        done
-    done
-    
-    # ResMLP shallow con/senza normalization, con/senza scheduler  
-    for normalization in "" "--normalization"; do
-        for scheduler in "" "--use_scheduler"; do
-            experiment_counter=$((experiment_counter + 1))
-            echo "    Experiment $experiment_counter: ResMLP shallow, width=$width"
-            
-            python main_ex1.py \
-                --model resmlp \
-                --dataset $dataset \
-                --hidden_dim $width \
-                --num_blocks 3 \
-                --lr $lr \
-                --epochs $epochs \
-                --batch_size $batch_size \
-                $normalization \
-                $scheduler \
-                --use_wandb \
-                2>&1 | tee results/exp${experiment_counter}_resmlp_shallow_w${width}_norm${normalization}_sched${scheduler}.log &
-                
-            sleep 2
-        done
-    done
-    
-    wait  # Aspetta che finiscano i shallow prima di continuare
-    
-    # MEDIUM NETWORKS (depth ~20)
-    echo "  Medium networks (~20 layers)"
-    
-    # Solo ResMLP per medium depth (MLP troppo profondo)
-    for normalization in "" "--normalization"; do
-        for scheduler in "" "--use_scheduler"; do
-            experiment_counter=$((experiment_counter + 1))
-            echo "    Experiment $experiment_counter: ResMLP medium, width=$width"
-            
-            python main_ex1.py \
-                --model resmlp \
-                --dataset $dataset \
-                --hidden_dim $width \
-                --num_blocks 6 \
-                --lr $lr \
-                --epochs $epochs \
-                --batch_size $batch_size \
-                $normalization \
-                $scheduler \
-                --use_wandb \
-                2>&1 | tee results/exp${experiment_counter}_resmlp_medium_w${width}_norm${normalization}_sched${scheduler}.log &
-                
-            sleep 2
-        done
-    done
-    
-    wait
-    
-    # DEEP NETWORKS (depth ~40)  
-    echo "  Deep networks (~40 layers)"
-    
-    # Solo ResMLP per deep (MLP impossibile)
-    for normalization in "" "--normalization"; do
-        for scheduler in "" "--use_scheduler"; do
-            experiment_counter=$((experiment_counter + 1))
-            echo "    Experiment $experiment_counter: ResMLP deep, width=$width"
-            
-            python main_ex1.py \
-                --model resmlp \
-                --dataset $dataset \
-                --hidden_dim $width \
-                --num_blocks 12 \
-                --lr $lr \
-                --epochs $epochs \
-                --batch_size $batch_size \
-                $normalization \
-                $scheduler \
-                --use_wandb \
-                2>&1 | tee results/exp${experiment_counter}_resmlp_deep_w${width}_norm${normalization}_sched${scheduler}.log &
-                
-            sleep 2
-        done
-    done
-    
-    wait
-done
-
-# =============================================================================
-# GRADIENT DEGRADATION STUDY
-# Confronto diretto MLP vs ResMLP su reti che MLP può ancora gestire
-# =============================================================================
-
-echo "=== GRADIENT DEGRADATION STUDY ==="
-
-# Test a profondità crescente fino a quando MLP fallisce
-test_depths=(2 4 6 8)
-
-for depth in "${test_depths[@]}"; do
-    echo "Testing degradation at depth: $depth"
-    
-    # Crea hidden_sizes per MLP
-    hidden_sizes=""
-    for i in $(seq 1 $depth); do
-        hidden_sizes="$hidden_sizes 128"
-    done
-    hidden_sizes=$(echo $hidden_sizes | xargs)  # trim spaces
-    
-    experiment_counter=$((experiment_counter + 1))
-    echo "  Experiment $experiment_counter: MLP depth $depth"
-    
-    # MLP
-    python main_ex1.py \
-        --model mlp \
-        --dataset $dataset \
-        --hidden_sizes $hidden_sizes \
-        --lr $lr \
-        --epochs 10 \
-        --batch_size $batch_size \
-        --use_wandb \
-        2>&1 | tee results/degradation_mlp_depth${depth}.log &
-    
-    # ResMLP equivalente
-    experiment_counter=$((experiment_counter + 1))  
-    echo "  Experiment $experiment_counter: ResMLP depth $depth"
-    
-    python main_ex1.py \
-        --model resmlp \
-        --dataset $dataset \
-        --hidden_dim 128 \
-        --num_blocks $depth \
-        --lr $lr \
-        --epochs 10 \
-        --batch_size $batch_size \
-        --use_wandb \
-        2>&1 | tee results/degradation_resmlp_depth${depth}.log &
-    
-    wait
-    sleep 5
-done
-
-# =============================================================================
-# SUMMARY
-# =============================================================================
-
-echo "=== EXPERIMENT SUMMARY ==="
-echo "Total experiments run: $experiment_counter"
+# Common arguments
+MLP_ARGS="--dataset MNIST --lr 1e-3 --use_wandb"
+# -----------------------------------------------------------------------------
+# MLP Experiments - Fixed width 128
+# -----------------------------------------------------------------------------
+echo " Running MLP experiments with WIDTH=128 "
+echo "  └── Testing depths: 40, 20, 10 with all configurations"
 echo ""
+
+# Depth 40, Width 128 
+
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 40 --width 128 # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 40 --width 128 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 40 --width 128 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 40 --width 128 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 40 --width 128 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 40 --width 128 # no norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 40 --width 128  # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 40 --width 128   # no norm, no scheduler
+
+# Depth 20, Width 128 
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 20 --width 128 # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 20 --width 128 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 20 --width 128 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 20 --width 128 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 20 --width 128 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 20 --width 128 # no norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 20 --width 128 # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 20 --width 128 # no norm, no scheduler
+
+# Depth 10, Width 128 
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 10 --width 128 # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 10 --width 128 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 10 --width 128 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 10 --width 128 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 10 --width 128 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 10 --width 128 # no norm, no scheduler
+ 
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 10 --width 128 # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 10 --width 128 # no norm, no scheduler
+
+# -----------------------------------------------------------------------------
+# MLP Experiments - Fixed width 64 
+# -----------------------------------------------------------------------------
+echo ""
+echo " Running MLP experiments with Width=64"
+echo "  └── Testing depths: 40, 20, 10 with all configurations"
+echo ""
+
+# Depth 40, Width 64 
+
+# Depth 40, Width 64 
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 40 --width 64 # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 40 --width 64 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 40 --width 64 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 40 --width 64 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 40 --width 64 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 40 --width 64 # no norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 40 --width 64 # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 40 --width 64 # no norm, no scheduler
+
+# Depth 20, Width 64 
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 20 --width 64 # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 20 --width 64 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 20 --width 64 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 20 --width 64 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 20 --width 64 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 20 --width 64 # no norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 20 --width 64 # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 20 --width 64 # no norm, no scheduler
+
+# Depth 10, Width 64 
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 10 --width 64 # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 10 --width 64 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 10 --width 64 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 10 --width 64 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 10 --width 64 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 10 --width 64 # no norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 10 --width 64 # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 10 --width 64 # no norm, no scheduler
+
+# -----------------------------------------------------------------------------
+# MLP Experiments - Fixed width 32 
+# -----------------------------------------------------------------------------
+echo ""
+echo " Running MLP experiments with WIDTH=32 (24 experiments)..."
+echo "  └── Testing depths: 40, 20, 10 with all configurations"
+echo ""
+
+# Depth 40, Width 32 
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 40 --width 32 # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 40 --width 32 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 40 --width 32 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 40 --width 32 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 40 --width 32 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 40 --width 32 # no norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 40 --width 32 # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 40 --width 32 # no norm, no scheduler
+
+# Depth 20, Width 32  
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 20 --width 32 # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 20 --width 32 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 20 --width 32 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 20 --width 32 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 20 --width 32 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 20 --width 32 # no norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 20 --width 32 # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 20 --width 32 # no norm, no scheduler
+
+# Depth 10, Width 32 
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --normalization --depth 10 --width 32  # norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --normalization --depth 10 --width 32 # norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --normalization --depth 10 --width 32 # norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --normalization --depth 10 --width 32 # norm, no scheduler
+
+python main_ex1.py --model resmlp $MLP_ARGS --use_scheduler --depth 10 --width 32 # no norm, scheduler
+python main_ex1.py --model resmlp $MLP_ARGS --depth 10 --width 32 # no norm, no scheduler
+
+python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 10 --width 32 # no norm, scheduler
+python main_ex1.py --model mlp $MLP_ARGS --depth 10 --width 32 # no norm, no scheduler
+
+echo "✅ MLP experiments completed!"
+echo ""
+
+# =============================================================================
+# EXERCISE 1.3: CNN EXPERIMENTS 
+# =============================================================================
+# Common arguments
+CNN_ARGS="--dataset CIFAR10 --lr 1e-3 --use_wandb"
+# -----------------------------------------------------------------------------
+# CNN ResNet-18 style [2,2,2,2] 
+# -----------------------------------------------------------------------------
+echo " Running CNN ResNet-18 style [2,2,2,2]"
+echo "  └── With/without residual connections and scheduler"
+echo ""
+
+python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --use_residual --layers 2 2 2 2     # scheduler, residual
+python main_ex1.py --model cnn $CNN_ARGS --use_residual --layers 2 2 2 2      # no scheduler, residual
+python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --layers 2 2 2 2     # scheduler, no residual
+python main_ex1.py --model cnn $CNN_ARGS --layers 2 2 2 2     # no scheduler, no residual
+
+# -----------------------------------------------------------------------------
+# CNN ResNet-34 style [3,4,6,3] 
+# -----------------------------------------------------------------------------
+echo "🔹 Running CNN ResNet-34 style [3,4,6,3]"
+echo "  └── With/without residual connections and scheduler"
+echo ""
+python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --use_residual --layers 3 4 6 3    # scheduler, residual
+python main_ex1.py --model cnn $CNN_ARGS --use_residual --layers 3 4 6 3     # no scheduler, residual
+python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --layers 3 4 6 3    # scheduler, no residual
+python main_ex1.py --model cnn $CNN_ARGS --layers 3 4 6 3    # no scheduler, no residual
+
+# -----------------------------------------------------------------------------
+# CNN ResNet-50 style [5,6,8,5]
+# -----------------------------------------------------------------------------
+echo "🔹 Running CNN ResNet-50 style [5,6,8,5] (just to try a more deep network even though ResNet-50 uses Bottleneck blocks)"
+echo "  └── With/without residual connections and scheduler"
+echo ""
+python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --use_residual --layers 5 6 8 5  # scheduler, residual
+python main_ex1.py --model cnn $CNN_ARGS --use_residual --layers 5 6 8 5      # no scheduler, residual
+python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --layers 5 6 8 5    # scheduler, no residual
+python main_ex1.py --model cnn $CNN_ARGS --layers 5 6 8 5         # no scheduler, no residual
+
+echo "✅ CNN experiments completed!"
+echo ""
+
+
+# =============================================================================
+
+echo ""
+echo "╔══════════════════════════════════════════════════════════════════╗"
+echo "║                     ALL EXPERIMENTS COMPLETED!                  ║"
+echo "╚══════════════════════════════════════════════════════════════════╝"
+echo ""
+
 echo "Results saved in:"
-echo "- Logs: ./results/"
-echo "- Models: ./Models/"  
-echo "- W&B dashboard for metrics"
-echo ""
-echo "Key comparisons to analyze:"
-echo "1. MLP vs ResMLP at same approximate depth"
-echo "2. Effect of normalization on deep networks"
-echo "3. Effect of scheduler on convergence"
-echo "4. Width vs depth tradeoffs"
-echo "5. Gradient degradation patterns"
-
-# Genera script di analisi
-cat > analyze_results.py << 'EOF'
-import os
-import re
-import pandas as pd
-import matplotlib.pyplot as plt
-
-def parse_logs():
-    """Parse log files to extract key metrics"""
-    results = []
-    
-    for filename in os.listdir('results/'):
-        if filename.endswith('.log'):
-            # Extract parameters from filename
-            params = {}
-            if 'mlp' in filename:
-                params['model'] = 'MLP'
-            elif 'resmlp' in filename:
-                params['model'] = 'ResMLP'
-            
-            # Extract other parameters
-            width_match = re.search(r'w(\d+)', filename)
-            if width_match:
-                params['width'] = int(width_match.group(1))
-            
-            depth_match = re.search(r'depth(\d+)', filename)
-            if depth_match:
-                params['depth'] = int(depth_match.group(1))
-            
-            params['normalization'] = '--normalization' in filename
-            params['scheduler'] = '--use_scheduler' in filename
-            
-            # TODO: Parse actual metrics from log content
-            # For now just store parameters
-            results.append(params)
-    
-    return pd.DataFrame(results)
-
-if __name__ == "__main__":
-    df = parse_logs()
-    print("Experiment parameters summary:")
-    print(df.groupby(['model', 'width']).size())
-EOF
-
-echo "Analysis script created: analyze_results.py"
-echo "Run: python analyze_results.py"
+echo "  • Model weights: Models/ directory"
+echo "  • W&B Dashboard: Check your Weights & Biases project"
+'''

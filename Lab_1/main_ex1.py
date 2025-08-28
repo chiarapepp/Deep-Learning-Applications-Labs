@@ -49,7 +49,7 @@ def parse_args():
     # [2, 2, 2, 2] like a ResNet18, [3, 4, 6, 3] like a resnet34, [5, 6, 8, 5] like a resnet50
     parser.add_argument("--layers", type=int, nargs="+", default=[2, 2, 2, 2],
                         help="Number of layer pattern for the CNN Model")
-    parser.add_argument("--residual", type=bool, default=True, help="If True use skip connection")
+    parser.add_argument("--use_residual",action='store_true', help="Use skip connection")
 
     parser.add_argument('--num_workers', type=int, default=4,
                        help='Number of data loading workers')
@@ -76,20 +76,21 @@ def main():
     if args.model == "mlp":
         if args.hidden_sizes:  
             hidden = args.hidden_sizes
-            run_name = f"mlp_custom{hidden}"
+            run_name = f"mlp_custom_{hidden}_n{int(args.normalization)}_sched{int(args.use_scheduler)}"
         else:
             hidden = [args.width] * args.depth
-            run_name = f"mlp_w{args.width}_d{args.depth}"
+            run_name = f"mlp_w{args.width}_d{args.depth}_n{int(args.normalization)}_sched{int(args.use_scheduler)}"
 
         model = MLP(input_size, hidden, classes, args.normalization)
 
     elif args.model == "resmlp":
         model = ResMLP(input_size, args.width, args.depth, classes, args.normalization)
-        run_name = f"resmlp_w{args.width}_d{args.depth}"
+        run_name = f"resmlp_w{args.width}_d{args.depth}_n{int(args.normalization)}_sched{int(args.use_scheduler)}"
 
     elif args.model == "cnn":
         model = CNN(args.layers, classes, args.use_residual)
-        run_name = f"cnn_skip{args.use_residual}_layers{args.layers}"
+        layers_str = "-".join(map(str, args.layers))
+        run_name = f"cnn_skip{int(args.use_residual)}_L{layers_str}_sched{int(args.use_scheduler)}"
 
     if args.use_wandb:
         wandb.init(

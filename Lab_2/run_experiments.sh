@@ -92,7 +92,7 @@ run_experiment "Cartpole - Exponential Temperature Schedule" \
 
 # Gradient clipping
 run_experiment "Cartpole - With Gradient Clipping" \
-    "--env cartpole --baseline value --clip-grad --episodes $EPISODES --lr $LR"
+    "--env cartpole --baseline value --clip_grad --episodes $EPISODES --lr $LR"
 
 # Deterministic evaluation
 run_experiment "Cartpole - Deterministic Evaluation" \
@@ -104,19 +104,19 @@ echo "------------------"
 
 # Full featured vs minimal
 run_experiment "Cartpole - Full Featured" \
-    "--env cartpole --baseline value --normalize --clip-grad --det --T 1.5 --t_schedule exponential --episodes $EPISODES --lr $LR"
+    "--env cartpole --baseline value --normalize --clip_grad --det --T 1.5 --t_schedule exponential --episodes $EPISODES --lr $LR"
 
 run_experiment "Cartpole - Minimal" \
     "--env cartpole --baseline none --episodes $EPISODES --lr $LR"
 
 # =============================================================================
-echo "Final Best Model Training"
-echo "----------------------------"
+# echo "Final Best Model Training"
+# echo "----------------------------"
 
 # Train best models for longer
-run_experiment "Cartpole - Best Model (Long Training)" \
-    "--env cartpole --baseline value --normalize --clip-grad --det --T 1.2 --t_schedule exponential --episodes 2000 --lr 5e-4 --visualize"
+# run_experiment "Cartpole - Best Model (Long Training)" \
+   # "--env cartpole --baseline value --normalize --clip_grad --det --T 1.2 --t_schedule exponential --episodes 2000 --lr 5e-4 --visualize"
 
-run_experiment "LunarLander - Best Model (Long Training)" \
-    "--env lunarlander --baseline value --normalize --clip-grad --det --T 1.0 --episodes 3000 --lr 1e-3 --visualize"
+# run_experiment "LunarLander - Best Model (Long Training)" \
+    #"--env lunarlander --baseline value --normalize --clip_grad --det --T 1.0 --episodes 3000 --lr 1e-3 --visualize"
 

@@ -36,21 +36,18 @@ class TQDMProgressCallback(TrainerCallback):
 Function that tokenize the dataset and save it to cache
 """
 
-def tokenize_dataset(use_fixed_padding: Optional[bool] = None) -> DatasetDict:
+def tokenize_dataset(use_fixed_padding: Optional[bool] = False) -> DatasetDict:
 
     ds = load_dataset(config.dataset_name)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
 
-    if use_fixed_padding is None:
-        chosen_padding = False
-    else:
-        chosen_padding = "max_length"
+    chosen_padding = "max_length" if use_fixed_padding else False
 
-    def tokenize_function(batch, chosen_padding):
+    def tokenize_function(batch):
         return tokenizer(
             batch["text"], 
             truncation=True, 
-            padding=chosen_padding,  # Will pad dynamically during training (DataCollatorWithPadding)  -> Using padding = max_length take the training from
+            padding=chosen_padding,  # If false, will pad dynamically during training (DataCollatorWithPadding), uUsing padding = max_length makes the training longer
             max_length=512
         )
     
@@ -92,7 +89,7 @@ Function that fine-tunes a DistilBERT model for binary sequence classification
 using Hugging Face Trainer.
 
 Args:
-    lr (float): Learning rate for the optimizer. Default is 3e-5.
+    lr (float): Learning rate for the optimizer. Default is 2e-5.
     epochs (int): Number of training epochs. Default is 3.
     batch_size (int): Batch size for both training and evaluation. Default is 16.
     output_dir (str): Directory to save checkpoints, logs, and the best model. Default is "runs/distilbert_finetuned".
@@ -105,8 +102,8 @@ Returns:
 """
 
 def fine_tune_model(
-    lr: float = 3e-5,
-    epochs: int = 3,   
+    lr: float = 2e-5,
+    epochs: int = 3,
     batch_size: int = 16,
     output_dir: str = "runs/distilbert_finetuned",
     use_wandb: bool = False,
@@ -114,13 +111,7 @@ def fine_tune_model(
     use_fixed_padding: Optional[bool] = None
 ):
     
-    if os.path.exists(config.tokenized_path):
-        tokenized_ds = load_from_disk(config.tokenized_path)
-        print(f"Loaded tokenized dataset from cache")
-    else:
-        print("No cached tokenized dataset found. Tokenizing now...")
-        tokenized_ds = tokenize_dataset(use_fixed_padding=use_fixed_padding)
-
+    tokenized_ds = tokenize_dataset(use_fixed_padding=use_fixed_padding)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     # ------------------------------------------
     # EXERCISE 2.2: Setup Model for Sequence Classification

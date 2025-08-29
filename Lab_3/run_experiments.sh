@@ -55,8 +55,18 @@ python main.py --step e31 --lr 2e-4 --lora_alpha 64 --lora_rank 16 $COMMON_ARGS 
 
 # Lora different target modules used, target_modules = q_lin k_lin v_lin out_lin lin1 lin2
 
+# lr 2e-5, padding=False
 python main.py --step e31 --lr 2e-5 --lora_alpha 32 --lora_rank 8 $COMMON_ARGS --output_dir runs/lora_lr2e-5_alpha32_rank8_tm --run_name finetuning_with_lora_r:8_a:32_lr:2e-5_tm --target_modules q_lin k_lin v_lin out_lin lin1 lin2
 python main.py --step e31 --lr 2e-5 --lora_alpha 64 --lora_rank 16 $COMMON_ARGS --output_dir runs/lora_lr2e-5_alpha64_rank16_tm --run_name finetuning_with_lora_r:16_a:64_lr:2e-5_tm --target_modules q_lin k_lin v_lin out_lin lin1 lin2
 
+# lr 2e-5, padding="max_length" (512)
+python main.py --step e31 --lr 2e-5 --lora_alpha 32 --lora_rank 8 $COMMON_ARGS --use_fixed_padding --output_dir runs/lora_lr2e-5_alpha32_rank8_padding_tm --run_name finetuning_with_lora_r:8_a:32_lr:2e-5_padding_tm --target_modules q_lin k_lin v_lin out_lin lin1 lin2
+python main.py --step e31 --lr 2e-5 --lora_alpha 64 --lora_rank 16 $COMMON_ARGS --use_fixed_padding --output_dir runs/lora_lr2e-5_alpha64_rank16_padding_tm --run_name finetuning_with_lora_r:16_a:64_lr:2e-5_padding_tm --target_modules q_lin k_lin v_lin out_lin lin1 lin2
+
+# lr 2e-4, padding=False
 python main.py --step e31 --lr 2e-4 --lora_alpha 32 --lora_rank 8 $COMMON_ARGS --output_dir runs/lora_lr2e-4_alpha32_rank8_tm --run_name finetuning_with_lora_r:8_a:32_lr:2e-4_tm --target_modules q_lin k_lin v_lin out_lin lin1 lin2
 python main.py --step e31 --lr 2e-4 --lora_alpha 64 --lora_rank 16 $COMMON_ARGS --output_dir runs/lora_lr2e-4_alpha64_rank16_tm --run_name finetuning_with_lora_r:16_a:64_lr:2e-4_tm --target_modules q_lin k_lin v_lin out_lin lin1 lin2
+
+# lr 2e-4, padding="max_length" (512)
+python main.py --step e31 --lr 2e-4 --lora_alpha 32 --lora_rank 8 $COMMON_ARGS --use_fixed_padding --output_dir runs/lora_lr2e-4_alpha32_rank8_padding_tm --run_name finetuning_with_lora_r:8_a:32_lr:2e-4_padding_tm --target_modules q_lin k_lin v_lin out_lin lin1 lin2
+python main.py --step e31 --lr 2e-4 --lora_alpha 64 --lora_rank 16 $COMMON_ARGS --use_fixed_padding --output_dir runs/lora_lr2e-4_alpha64_rank16_padding_tm --run_name finetuning_with_lora_r:16_a:64_lr:2e-4_padding_tm --target_modules q_lin k_lin v_lin out_lin lin1 lin2

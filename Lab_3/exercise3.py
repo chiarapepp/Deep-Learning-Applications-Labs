@@ -46,7 +46,6 @@ def fine_tune_with_lora(
 ):
 
     tokenized_ds = tokenize_dataset(use_fixed_padding=use_fixed_padding)
-
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     base_model = AutoModelForSequenceClassification.from_pretrained(
         config.model_name,
@@ -58,16 +57,14 @@ def fine_tune_with_lora(
         print(f"parameter: {name}, Shape: {param.shape}, Requires grad: {param.requires_grad}")
 
     if target_modules is None:
-        target_modules = ["q_lin", "k_lin", "v_lin", "out_lin"]
-    else:
-        target_modules = target_modules
+        target_modules = ["q_lin", "k_lin", "v_lin", "out_lin"]  # default target_modules
 
     lora_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,
         r=lora_rank,  # Rank of adaptation
         lora_alpha=lora_alpha,  # Alpha parameter for LoRA scaling
         lora_dropout=0.1,  # Dropout probability for LoRA layers
-        target_modules=["q_lin", "k_lin", "v_lin", "out_lin"],  # Target DistilBERT attention modules
+        target_modules=target_modules,  # Target DistilBERT attention modules
         bias="none",
     )
     

@@ -27,8 +27,8 @@ def get_args():
     parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
     parser.add_argument("--epochs", type=int, default=3, help="Number of epochs")
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size")
-    parser.add_argument("--use_fixed_padding", action="store_true", help="Use fixed padding to max_length (512)")
-    
+    parser.add_argument("--use_fixed_padding", action="store_true", help="Use fixed padding to max_length (512), without is dynamic padding")
+
     # LoRA parameters
     parser.add_argument("--lora_rank", type=int, default=8, help="LoRA rank")
     parser.add_argument("--lora_alpha", type=int, default=16, help="LoRA alpha")

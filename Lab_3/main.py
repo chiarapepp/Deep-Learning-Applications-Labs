@@ -77,8 +77,8 @@ def main():
             batch_size=args.batch_size,
             output_dir=args.output_dir,
             use_wandb=args.use_wandb,
-            run_name=args.run_name
-            
+            run_name=args.run_name,
+            use_fixed_padding=args.use_fixed_padding  
         )
         
     elif args.step == "e31":

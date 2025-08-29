@@ -46,7 +46,7 @@ def tokenize_dataset(use_fixed_padding: Optional[bool] = None) -> DatasetDict:
     else:
         chosen_padding = "max_length"
 
-    def tokenize_function(batch):
+    def tokenize_function(batch, chosen_padding):
         return tokenizer(
             batch["text"], 
             truncation=True, 

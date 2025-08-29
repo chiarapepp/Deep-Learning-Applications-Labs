@@ -18,7 +18,7 @@ COMMON_ARGS="--batch_size 16 --epochs 5 --use_wandb"
 # ======================================================================
 
 # Token Preprocessing
-python main.py --step e21 $COMMON_ARGS
+python main.py --step e21 
 
 # Fine-tuning DistilBERT (Full Model) 
 python main.py --step e23  --lr 2e-5 $COMMON_ARGS --output_dir runs/distilbert_lr2e-5

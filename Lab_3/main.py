@@ -64,7 +64,7 @@ def main():
         
     elif args.step == "e21":
         # Exercise 2.1: Tokenize dataset
-        tokenize_dataset(args.subset)
+        tokenize_dataset()
         
     elif args.step == "e23":
         # Exercise 2.3: Fine-tune with Trainer

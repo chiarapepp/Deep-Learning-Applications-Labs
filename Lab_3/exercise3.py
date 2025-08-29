@@ -53,7 +53,9 @@ def fine_tune_with_lora(
         id2label={0: "negative", 1: "positive"},
         label2id={"negative": 0, "positive": 1}
     )
-    
+    for name, param in base_model.named_parameters():
+        print(f"parameter: {name}, Shape: {param.shape}, Requires grad: {param.requires_grad}")
+
     lora_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,
         r=lora_rank,  # Rank of adaptation
@@ -64,25 +66,18 @@ def fine_tune_with_lora(
     )
     
     model = get_peft_model(base_model, lora_config)
-    model.print_trainable_parameters()
+    for name, param in model.named_parameters():
+            if 'lora' in name:
+                print(f"LoRA parameter: {name}, Shape: {param.shape}, Requires grad: {param.requires_grad}")
+
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"\nTotal parameters: {total_params:,}")
+    print(f"Trainable parameters: {trainable_params:,} ({trainable_params / total_params:.2%})")
+    print(f"LoRA parameters: {sum(p.numel() for p in model.parameters() if 'lora' in p.name):,}")
+
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
-    training_args = TrainingArguments(
-        output_dir=output_dir,
-        num_train_epochs=epochs,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
-        learning_rate=lr,
-        weight_decay=0.01,
-        eval_strategy="epoch",
-        save_strategy="epoch",
-        logging_strategy="steps",
-        load_best_model_at_end=True,
-        logging_steps=20,
-        report_to="wandb" if use_wandb else "none",
-        seed=config.seed,
-    )
-
     run_name = f"finetuning_with_lora_r:{lora_rank}_a:{lora_alpha}_lr:{lr}"
 
     if use_wandb:
@@ -99,6 +94,24 @@ def fine_tune_with_lora(
                 "lora_alpha": lora_alpha,
             }
         )
+
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        num_train_epochs=epochs,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        learning_rate=lr,
+        weight_decay=0.01,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        logging_strategy="steps",
+        load_best_model_at_end=True,
+        metric_for_best_model="accuracy",
+        logging_steps=10,
+        report_to="wandb" if use_wandb else "none",
+        run_name=run_name,
+        seed=config.seed,
+    )
 
     trainer = Trainer(
         model=model,

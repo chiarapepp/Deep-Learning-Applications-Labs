@@ -36,7 +36,7 @@ class TQDMProgressCallback(TrainerCallback):
 Function that tokenize the dataset and save it to cache
 """
 
-def tokenize_dataset(subset: Optional[int] = None) -> DatasetDict:
+def tokenize_dataset() -> DatasetDict:
     
     ds = load_dataset(config.dataset_name)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
@@ -106,7 +106,7 @@ def fine_tune_model(
     output_dir: str = "runs/distilbert_finetuned",
     use_wandb: bool = False,
 ):
-      
+    
     if os.path.exists(config.tokenized_path):
         tokenized_ds = load_from_disk(config.tokenized_path)
         print(f"Loaded tokenized dataset from cache")
@@ -121,30 +121,12 @@ def fine_tune_model(
     model = AutoModelForSequenceClassification.from_pretrained(
         config.model_name,
         num_labels=2,
-        id2label={0: "negative", 1: "positive"},
-        label2id={"negative": 0, "positive": 1}
+        id2label={0: "negative", 1: "positive"},   # Map label IDs to label names
+        label2id={"negative": 0, "positive": 1}    # Map label names to label IDs
     )
     
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
-    training_args = TrainingArguments(
-        output_dir=output_dir,
-        num_train_epochs=epochs,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
-        learning_rate=lr,
-        weight_decay=0.01,
-        eval_strategy="epoch",
-        save_strategy="epoch",
-        logging_strategy="steps",
-        load_best_model_at_end=True,
-        metric_for_best_model="accuracy",
-        logging_dir=f"{output_dir}/logs",
-        logging_steps=20,
-        report_to="wandb" if use_wandb else "none",
-        seed=config.seed,
-    )
-    
     run_name = f"distilbert_finetuning_lr:{lr}"
 
     if use_wandb:
@@ -158,7 +140,26 @@ def fine_tune_model(
                 "epochs": epochs,
                 "batch_size": batch_size,
             }
-        )
+        )  
+
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        num_train_epochs=epochs,
+        per_device_train_batch_size=batch_size,
+        per_device_eval_batch_size=batch_size,
+        learning_rate=lr,
+        weight_decay=0.01,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        logging_strategy="steps",
+        logging_steps=10,
+        load_best_model_at_end=True,
+        metric_for_best_model="accuracy",
+        logging_dir=f"{output_dir}/logs",
+        report_to="wandb" if use_wandb else "none",
+        run_name=run_name,
+        seed=config.seed,
+    )
     
     trainer = Trainer(
         model=model,

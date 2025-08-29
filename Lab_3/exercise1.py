@@ -193,7 +193,7 @@ def run_svm_baseline(use_wandb: bool = False):
     if use_wandb:
         wandb.init(
             project="DLA_Lab_3",
-            name=f"SVM_baseline_subset",
+            name=f"SVM_baseline",
             config={
                 "model": config.model_name,
                 "dataset": config.dataset_name,

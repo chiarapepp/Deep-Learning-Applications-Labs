@@ -165,7 +165,7 @@ python main_ex1.py --model resmlp $MLP_ARGS --depth 10 --width 32 # no norm, no 
 python main_ex1.py --model mlp $MLP_ARGS --use_scheduler --depth 10 --width 32 # no norm, scheduler
 python main_ex1.py --model mlp $MLP_ARGS --depth 10 --width 32 # no norm, no scheduler
 
-echo "✅ MLP experiments completed!"
+echo "MLP experiments completed!"
 echo ""
 
 # =============================================================================
@@ -188,7 +188,7 @@ python main_ex1.py --model cnn $CNN_ARGS --layers 2 2 2 2     # no scheduler, no
 # -----------------------------------------------------------------------------
 # CNN ResNet-34 style [3,4,6,3] 
 # -----------------------------------------------------------------------------
-echo "🔹 Running CNN ResNet-34 style [3,4,6,3]"
+echo " Running CNN ResNet-34 style [3,4,6,3]"
 echo "  └── With/without residual connections and scheduler"
 echo ""
 python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --use_residual --layers 3 4 6 3    # scheduler, residual
@@ -199,7 +199,7 @@ python main_ex1.py --model cnn $CNN_ARGS --layers 3 4 6 3    # no scheduler, no 
 # -----------------------------------------------------------------------------
 # CNN ResNet-50 style [5,6,8,5]
 # -----------------------------------------------------------------------------
-echo "🔹 Running CNN ResNet-50 style [5,6,8,5] (just to try a more deep network even though ResNet-50 uses Bottleneck blocks)"
+echo " Running CNN ResNet-50 style [5,6,8,5] (just to try a more deep network even though ResNet-50 uses Bottleneck blocks)"
 echo "  └── With/without residual connections and scheduler"
 echo ""
 python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --use_residual --layers 5 6 8 5  # scheduler, residual
@@ -207,9 +207,85 @@ python main_ex1.py --model cnn $CNN_ARGS --use_residual --layers 5 6 8 5      # 
 python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --layers 5 6 8 5    # scheduler, no residual
 python main_ex1.py --model cnn $CNN_ARGS --layers 5 6 8 5         # no scheduler, no residual
 
-echo "✅ CNN experiments completed!"
+echo "CNN experiments completed!"
 echo ""
 
+
+# =============================================================================
+# EXERCISE 2.1: FINE-TUNING EXPERIMENTS 
+# =============================================================================
+
+# Path to the pre-trained model on CIFAR-10
+
+# In my case I used the models CNN ResNet-18 style, trained with 
+# data augmentation, skip connections and learning rate scheduler.
+
+PATH_MODEL="Models/cnn_augm_skip1_L2-2-2-2_sched1.pth" 
+
+# Since the model was trained with skip connections we set --use_residual in the main as True
+
+FINE_TUNE_ARGS="--use_wandb --path $PATH_MODEL --layers 2 2 2 2" 
+
+
+# =============================================================================
+# Linear Evaluation - Freeze All Layers 
+# =============================================================================
+echo " Linear Evaluation - Freeze ALL layers"
+echo "  └── Testing SGD vs Adam with different learning rates"
+echo ""
+
+python main_ex2.py --lr 1e-3 --optimizer SGD --use_scheduler --freeze_layers "layer1,layer2,layer3,layer4" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-3 --optimizer SGD --freeze_layers "layer1,layer2,layer3,layer4" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-2 --optimizer SGD --use_scheduler --freeze_layers "layer1,layer2,layer3,layer4" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-2 --optimizer SGD --freeze_layers "layer1,layer2,layer3,layer4" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-3 --optimizer Adam --use_scheduler --freeze_layers "layer1,layer2,layer3,layer4" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-3 --optimizer Adam --freeze_layers "layer1,layer2,layer3,layer4" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-2 --optimizer Adam --use_scheduler --freeze_layers "layer1,layer2,layer3,layer4" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-2 --optimizer Adam --freeze_layers "layer1,layer2,layer3,layer4" $FINE_TUNE_ARGS
+
+# =============================================================================
+# Partial Fine-tuning - Freeze Early Layers
+# =============================================================================
+echo " Partial Fine-tuning - Freeze layer1,layer2"
+echo "  └── Unfreeze layer3,layer4 for adaptation"
+echo ""
+
+python main_ex2.py --lr 1e-3 --optimizer SGD --use_scheduler --freeze_layers "layer1,layer2" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-3 --optimizer SGD --freeze_layers "layer1,layer2" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-2 --optimizer SGD --use_scheduler --freeze_layers "layer1,layer2" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-2 --optimizer SGD --freeze_layers "layer1,layer2" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-3 --optimizer Adam --use_scheduler --freeze_layers "layer1,layer2" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-3 --optimizer Adam --freeze_layers "layer1,layer2" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-2 --optimizer Adam --use_scheduler --freeze_layers "layer1,layer2" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-2 --optimizer Adam --freeze_layers "layer1,layer2" $FINE_TUNE_ARGS
+
+# =============================================================================
+# Almost Full Fine-tuning - Freeze Only First Layer
+# =============================================================================
+echo "Almost Full Fine-tuning - Freeze only layer1"
+echo "  └── Unfreeze layer2,layer3,layer4 for full adaptation"
+echo ""
+
+python main_ex2.py --lr 1e-3 --optimizer SGD --use_scheduler --freeze_layers "layer1" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-3 --optimizer SGD --freeze_layers "layer1" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-2 --optimizer SGD --use_scheduler --freeze_layers "layer1" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-2 --optimizer SGD --freeze_layers "layer1" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-3 --optimizer Adam --use_scheduler --freeze_layers "layer1" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-3 --optimizer Adam --freeze_layers "layer1" $FINE_TUNE_ARGS
+
+python main_ex2.py --lr 1e-2 --optimizer Adam --use_scheduler --freeze_layers "layer1" $FINE_TUNE_ARGS
+python main_ex2.py --lr 1e-2 --optimizer Adam --freeze_layers "layer1" $FINE_TUNE_ARGS
+
+echo "Fine-tuning experiments completed!"
+echo ""
 
 # =============================================================================
 
@@ -218,8 +294,3 @@ echo "╔═══════════════════════�
 echo "║                     ALL EXPERIMENTS COMPLETED!                  ║"
 echo "╚══════════════════════════════════════════════════════════════════╝"
 echo ""
-
-echo "Results saved in:"
-echo "  • Model weights: Models/ directory"
-echo "  • W&B Dashboard: Check your Weights & Biases project"
-'''

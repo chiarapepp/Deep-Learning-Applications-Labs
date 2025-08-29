@@ -37,6 +37,17 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
 
     elif name == "CIFAR10":
         # Convert images to tensor and normalize with CIFAR-10 mean and std (RGB)
+
+        transform_augm_train = transforms.Compose([            
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.4914, 0.4822, 0.4465],
+                std=[0.2470, 0.2435, 0.2616]
+            )
+        ])
+
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
@@ -44,13 +55,24 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
                 std=[0.2470, 0.2435, 0.2616]
             )
         ])
-        ds_train = CIFAR10(root='./data', train=True, download=True, transform=transform)
+        ds_train = CIFAR10(root='./data', train=True, download=True, transform=transform_augm_train)
         ds_test = CIFAR10(root='./data', train=False, download=True, transform=transform)
         classes = 10
         input_size = 32 * 32 * 3
 
     elif name == "CIFAR100":
         # Convert images to tensor and normalize with CIFAR-100 mean and std (RGB)
+        transform_augm_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=[0.5071, 0.4867, 0.4408],
+                std=[0.2675, 0.2565, 0.2761]
+            )
+        ])
+        # No augmentation for test set
+        
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
@@ -58,10 +80,11 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
                 std=[0.2675, 0.2565, 0.2761]
             )
         ])
-        ds_train = CIFAR100(root='./data', train=True, download=True, transform=transform)
+        ds_train = CIFAR100(root='./data', train=True, download=True, transform=transform_augm_train)
         ds_test = CIFAR100(root='./data', train=False, download=True, transform=transform)
         classes = 100
         input_size = 32 * 32 * 3
+
 
     else:
         raise ValueError(f"Dataset {name} not supported.")

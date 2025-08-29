@@ -58,6 +58,8 @@ def parse_args():
     
     parser.add_argument('--use_wandb', action='store_true',
                        help='Use Weights & Biases for logging')
+    parser.add_argument('--run_name', type=str, default=None,
+                       help='Run name for Weights & Biases logging')
 
     args = parser.parse_args()
     return args
@@ -91,6 +93,9 @@ def main():
         model = CNN(args.layers, classes, args.use_residual)
         layers_str = "-".join(map(str, args.layers))
         run_name = f"cnn_skip{int(args.use_residual)}_L{layers_str}_sched{int(args.use_scheduler)}"
+
+    if args.run_name is not None: 
+        run_name = args.run_name
 
     if args.use_wandb:
         wandb.init(

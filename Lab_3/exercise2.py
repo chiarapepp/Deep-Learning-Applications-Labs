@@ -12,6 +12,11 @@ import wandb
 # EXERCISE 2.1: Dataset Tokenization
 # -------------------------------------
 
+"""
+This class implements a progress bar using TQDM for training loops.
+It updates the progress bar at each training step and closes it at the end of training.
+"""
+
 class TQDMProgressCallback(TrainerCallback):
     def __init__(self):
         super().__init__()
@@ -78,13 +83,25 @@ def tokenize_dataset(subset: Optional[int] = None) -> DatasetDict:
 # ------------------------------------------
 
 """
-Function that fine-tunes a DistilBERT model for binary sequence 
-classification using Hugging Face Trainer.
+Function that fine-tunes a DistilBERT model for binary sequence classification
+using Hugging Face Trainer.
+
+Args:
+    lr (float): Learning rate for the optimizer. Default is 3e-5.
+    epochs (int): Number of training epochs. Default is 3.
+    batch_size (int): Batch size for both training and evaluation. Default is 16.
+    output_dir (str): Directory to save checkpoints, logs, and the best model. Default is "runs/distilbert_finetuned".
+    use_wandb (bool): Whether to log metrics to Weights & Biases. Default is False.
+
+Returns:
+    - train_result: the Hugging Face `TrainOutput` object containing training loss, global step, and metrics.
+    - test_results: dictionary with evaluation metrics on the test set if available.
+
 """
 
 def fine_tune_model(
-    lr: float = 2e-5,
-    epochs: int = 3,
+    lr: float = 3e-5,
+    epochs: int = 3,   
     batch_size: int = 16,
     output_dir: str = "runs/distilbert_finetuned",
     use_wandb: bool = False,
@@ -119,18 +136,21 @@ def fine_tune_model(
         weight_decay=0.01,
         eval_strategy="epoch",
         save_strategy="epoch",
+        logging_strategy="steps",
         load_best_model_at_end=True,
         metric_for_best_model="accuracy",
         logging_dir=f"{output_dir}/logs",
-        logging_steps=10,
+        logging_steps=20,
         report_to="wandb" if use_wandb else "none",
         seed=config.seed,
     )
     
+    run_name = f"distilbert_finetuning_lr:{lr}"
+
     if use_wandb:
         wandb.init(
             project="DLA_Lab_3",
-            name=f"distilbert_finetuning",
+            name=run_name,
             config={
                 "model": config.model_name,
                 "dataset": config.dataset_name,
@@ -147,7 +167,7 @@ def fine_tune_model(
         eval_dataset=tokenized_ds["validation"],
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_metrics,
+        compute_metrics=compute_metrics,   # Compute metrics function
         callbacks=[TQDMProgressCallback()],
     )
     
@@ -155,6 +175,7 @@ def fine_tune_model(
 
     train_result = trainer.train()
 
+    # Hugging face Trainer add the prefix eval_ automatically
     if "test" in tokenized_ds:
         test_results = trainer.evaluate(eval_dataset=tokenized_ds["test"])
         print("\nTest Set Results:")

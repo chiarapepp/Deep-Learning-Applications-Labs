@@ -1,5 +1,5 @@
 import argparse
-from html import parser
+import datetime
 import os
 import wandb
 import torch
@@ -25,7 +25,9 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=0.005, help="Learning rate for the optimizer")
     parser.add_argument("--optimizer", type=str, choices=["SGD", "Adam"], default="SGD", help="Choose optimizer from SGD or ADAM")
     parser.add_argument("--momentum", type=float, default=0.9, help="Momentum for SGD optimizer")
-
+    parser.add_argument('--use_scheduler', action='store_true',
+                       help='Use cosine learning rate scheduler')
+    
     parser.add_argument("--path", type=str, default=None, help="Path to the pretrained model of the CNN on CIFAR10")
     
     # CNN-specific arguments
@@ -41,6 +43,7 @@ def parse_args():
     
     parser.add_argument('--use_wandb', action='store_true',
                        help='Use Weights & Biases for logging')
+    parser.add_argument('--svm_baseline', action='store_true', help="Compute SVM as baseline")
 
     args = parser.parse_args()
     return args
@@ -60,8 +63,11 @@ def main():
 
     train_dataloader, val_dataloader, test_dataloader, classes, input_size = get_dataloaders(DATASET, args.batch_size, num_workers = args.num_workers, val_ratio=args.val_ratio)
 
+    if args.path is None:
+        raise ValueError("Please provide path to pretrained CIFAR10 model with --path")
+
     # Load the pretrained CNN (CIFAR10)
-    model_cifar10 = CNN(args.layers, classes=10, residual=True).to(device)
+    model_cifar10 = CNN(args.layers, classes=10, use_residual=True).to(device)
     model_cifar10.load_state_dict(torch.load(args.path, map_location=device))
 
     # Feature extraction  
@@ -69,24 +75,41 @@ def main():
     validation_features, validation_labels = extract_features(model_cifar10, val_dataloader, device)
     test_features, test_labels = extract_features(model_cifar10, test_dataloader, device)
 
-    #Get the accuracy on the validation/test set using a Linear SVM on the extracted features.
-    val_accuracy, test_accuracy = evaluate_with_svm(train_features, train_labels, validation_features, validation_labels , test_features, test_labels)
-    print(f"Baseline Linear SVM - Val Acc: {val_accuracy}") 
-    print(f"Baseline Linear SVM - Test Acc: {test_accuracy}")
+    print("Feature extraction complete.")
 
-    # Setup CIFAR-100
-    model = CNN(args.layers, classes=100, residual=True).to(device)
-    model.load_state_dict(model_cifar10.state_dict(), strict=False)  # load weights except for the final layer.
-    model.fc = torch.nn.Linear(model.fc.in_features, 100)             # new classifier head.
-    torch.nn.init.normal_(model.fc.weight, mean=0.0, std=0.01)
-    torch.nn.init.zeros_(model.fc.bias)
+    if args.svm_baseline:
+        print("Evaluating baseline with Linear SVM on extracted features")
+        
+        # Get the accuracy on the validation/test set using a Linear SVM on the extracted features.
+        results = evaluate_with_svm(train_features, train_labels, validation_features, validation_labels , test_features, test_labels)
+        val_accuracy = results["val_acc"]
+        test_accuracy = results["test_acc"]
+        print(f"Baseline Linear SVM - Val Acc: {val_accuracy}") 
+        print(f"Baseline Linear SVM - Test Acc: {test_accuracy}")
+
+        os.makedirs("Results", exist_ok=True)
+        baseline_file = os.path.join("Results", "baseline_svm.txt")
+        with open(baseline_file, "a") as f:  
+            f.write(f"Run {datetime.datetime.now()}: Val Acc = {val_accuracy:.4f}, Test Acc = {test_accuracy:.4f}\n")
+
+    # Fine-tuning the CNN on CIFAR100
+    model = CNN(args.layers, classes=100, use_residual=True).to(device)
+    pretrained_dict = {k: v for k, v in model_cifar10.state_dict().items() if "fc" not in k}  # load weights except for the final layer.
+    model.load_state_dict(pretrained_dict, strict=False)
+
+    if hasattr(model, "fc"):
+        model.fc = torch.nn.Linear(model.fc.in_features, 100)     # new classifier head.
+        torch.nn.init.normal_(model.fc.weight, mean=0.0, std=0.01)
+        torch.nn.init.zeros_(model.fc.bias)
+    else:
+        raise AttributeError("The CNN model does not have an attribute 'fc'")
 
     for name, param in model.named_parameters():
         if any(layer_name in name for layer_name in layers_to_freeze):
             param.requires_grad = False
             print(f"Freezing layer: {name}")
 
-    run_name = f"finetune_cnn_skip_{args.use_residual}_layers{args.layers}_freeze_{args.freeze_layers}"
+    run_name = f"finetune_cnn_sched{int(args.use_scheduler)}_freeze_{args.freeze_layers}_lr{args.lr}_opt{args.optimizer}"
 
     if args.use_wandb:
         wandb.init(
@@ -97,8 +120,10 @@ def main():
 
     if args.optimizer == "SGD":
         optimizer = torch.optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, momentum=args.momentum)
-    if args.optimizer == "Adam":
+    elif args.optimizer == "Adam":
         optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
+    else:
+        raise ValueError(f"Unknown optimizer {args.optimizer}")
 
     train(model, optimizer, train_dataloader, val_dataloader, device, args)
 
@@ -106,9 +131,10 @@ def main():
 
     if args.use_wandb:
         wandb.log({
-        "test_accuracy": top1,
-        "test_top5_accuracy": top5
-        }, step=args.epochs)
+            "test_accuracy": top1,
+            "test_top5_accuracy": top5
+        })
+
 
     print(f"Final Test Results:")
     print(f"Top-1 Accuracy: {top1:.4f}")

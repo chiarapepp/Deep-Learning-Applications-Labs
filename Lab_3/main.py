@@ -7,7 +7,7 @@ from exercise3 import fine_tune_with_lora
 
 def get_args():
     """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description="Lab 3: Transformer Fine-tuning")
+    parser = argparse.ArgumentParser(description="Lab 3: Transformer Fine-tuning.")
     
     # Exercise selection
     parser.add_argument(
@@ -20,6 +20,9 @@ def get_args():
     # Dataset options
     parser.add_argument("--subset", type=int, help="Use subset of data for testing")
     
+    parser.add_argument("--sample_text", type=str, nargs="+", default=None,
+                        help="Optional sample text(s) for exploration")
+
     # Training hyperparameters
     parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
     parser.add_argument("--epochs", type=int, default=3, help="Number of epochs")
@@ -53,7 +56,7 @@ def main():
         
     elif args.step == "e12":
         # Exercise 1.2: Model and tokenizer exploration
-        explore_model_and_tokenizer()
+        explore_model_and_tokenizer(sample_texts=args.sample_text, use_dataset=args.sample_text is None)
         
     elif args.step == "e13":
         # Exercise 1.3: SVM baseline

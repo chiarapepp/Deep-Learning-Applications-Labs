@@ -69,7 +69,7 @@ def extract_features(model, dataloader, device):
     features = []
     labels = []
     with torch.no_grad():
-        for x, y in dataloader:
+        for x, y in tqdm(dataloader, desc="Extracting features", ncols=100):
             x = x.to(device)
             feat = model.get_features(x)  # 512-d feature vector
             features.append(feat.cpu().numpy())
@@ -98,7 +98,7 @@ def evaluate_with_svm(train_features, train_labels, val_features, val_labels, te
     if test_features is not None:
         test_features_scaled = scaler.transform(test_features)
 
-    clf = SVC(kernel='linear')
+    clf = SVC(kernel='linear', max_iter=100)
     clf.fit(train_features_scaled, train_labels)
 
     val_preds = clf.predict(val_features_scaled)

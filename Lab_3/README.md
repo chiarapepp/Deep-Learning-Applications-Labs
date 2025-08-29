@@ -1,4 +1,4 @@
-# Lab 3: Working with Transformers in the HuggingFace Ecosystem
+# Laboratory 3 - Working with Transformers in the HuggingFace Ecosystem
 
 ## Overview
 
@@ -299,6 +299,8 @@ num_labels=5  # for 5-star rating prediction
 ## Resources
 
 - [HuggingFace Transformers Documentation](https://huggingface.co/docs/transformers/)
+https://huggingface.co/tasks/feature-extraction
+https://huggingface.co/docs/transformers/main/en/main_classes/trainer
 - [PEFT Library Guide](https://huggingface.co/docs/peft/)
 - [LoRA Paper](https://arxiv.org/abs/2106.09685)
 - [DistilBERT Paper](https://arxiv.org/abs/1910.01108)

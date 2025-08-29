@@ -10,6 +10,7 @@ class Config:
     seed: int = 10
     cache_dir: str = ".cache_lab3"
     tokenized_path: str = ".cache_lab3/tokenized_dataset"
+    device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 config = Config()
 

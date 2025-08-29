@@ -13,8 +13,22 @@ import wandb
 # --------------------------------
 
 """
-Function that fine-tunes a DistilBERT model for binary sequence 
-classification using LoRA (Parameter-Efficient Fine-tuning).
+Function that fine-tunes a DistilBERT model for binary sequence classification
+using LoRA (Low-Rank Adaptation) for parameter-efficient fine-tuning.
+
+Args:
+    lora_rank (int): Rank of the LoRA adaptation matrices. Default is 8.
+    lora_alpha (int): Alpha scaling factor for LoRA layers. Default is 16.
+    lr (float): Learning rate for the optimizer. Default is 2e-5.
+    epochs (int): Number of training epochs. Default is 3.
+    batch_size (int): Batch size for both training and evaluation. Default is 16.
+    output_dir (str): Directory to save checkpoints, logs, and the best model. Default is "runs/distilbert_lora".
+    use_wandb (bool): Whether to log metrics and training info to Weights & Biases. Default is False.
+
+Returns:
+    - trainer.train() returns the Hugging Face `TrainOutput` object containing
+        training loss, global step, and metrics.
+    - test_results: dictionary with evaluation metrics on the test set if available.
 """
 
 def fine_tune_with_lora(
@@ -62,16 +76,19 @@ def fine_tune_with_lora(
         weight_decay=0.01,
         eval_strategy="epoch",
         save_strategy="epoch",
+        logging_strategy="steps",
         load_best_model_at_end=True,
-        logging_steps=10,
+        logging_steps=20,
         report_to="wandb" if use_wandb else "none",
         seed=config.seed,
     )
-    
+
+    run_name = f"finetuning_with_lora_r:{lora_rank}_a:{lora_alpha}_lr:{lr}"
+
     if use_wandb:
         wandb.init(
             project="DLA_Lab_3",
-            name=f"distilbert_finetuning_with_lora",
+            name=run_name,
             config={
                 "model": config.model_name,
                 "dataset": config.dataset_name,
@@ -97,8 +114,8 @@ def fine_tune_with_lora(
     print(f"  LoRA rank: {lora_rank}")
     print(f"  LoRA alpha: {lora_alpha}")
     
+    train_result = trainer.train()
 
-    trainer.train()
     if "test" in tokenized_ds:
         test_results = trainer.evaluate(eval_dataset=tokenized_ds["test"])
         print("\nTest Results:")

@@ -15,6 +15,12 @@ import wandb
 # EXERCISE 1.1: Dataset Exploration
 # -------------------------------------
 
+'''
+This function loads a dataset, optionally selects a subset, 
+prints information about splits, sizes, label distribution, 
+and shows a sample from the training set.
+'''
+
 def load_and_explore_dataset(subset: Optional[int] = None) -> DatasetDict:
     """Load dataset and explore its structure"""
     print(f"\nLoading dataset: {config.dataset_name}")
@@ -53,12 +59,19 @@ def load_and_explore_dataset(subset: Optional[int] = None) -> DatasetDict:
 # EXERCISE 1.2: Model and Tokenizer Exploration
 # -----------------------------------------------
 
+'''
+This function loads a pre-trained model and tokenizer,
+tokenizes sample texts, prints tokenization details,
+and shows the shape of CLS embeddings from the last hidden state.
+'''
+
 def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None, use_dataset: bool = True):
     print("\nExploration of pre-trained model and tokenizer outputs")
     
     # Load model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     model = AutoModel.from_pretrained(config.model_name)
+    model.to(config.device)
     
     if use_dataset:
         ds = load_dataset(config.dataset_name)
@@ -77,7 +90,8 @@ def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None, use_da
     
     # Tokenize
     encoded = tokenizer(sample_texts, padding=True, truncation=True, return_tensors="pt")
-    print(f"\nTokenizer output keys: {list(encoded.keys())}")
+    encoded = {k: v.to(config.device) for k, v in encoded.items()}
+    
     print(f"Input IDs shape: {encoded['input_ids'].shape}")
     print(f"Attention mask shape: {encoded['attention_mask'].shape}")
     print(f"Input IDs (first sample): {encoded['input_ids'][0][:10].tolist()}")
@@ -93,12 +107,10 @@ def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None, use_da
     with torch.no_grad():
         outputs = model(**encoded)
     
-
     # From Huggingface documentation
     # last_hidden_state (tf.Tensor of shape (batch_size, sequence_length, hidden_size)) 
     # — Sequence of hidden-states at the output of the last layer of the model.
 
-    print(f"\nModel output keys: {list(outputs.keys())}")
     print(f"CLS token embeddings shape: {outputs.last_hidden_state[:, 0, :].shape}")
     print(f"Hidden size: {outputs.last_hidden_state.shape[-1]}")
 
@@ -106,6 +118,12 @@ def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None, use_da
 # -----------------------------------------------
 # EXERCISE 1.3: SVM Baseline
 # -----------------------------------------------
+
+'''
+This function extracts the CLS token features from a list of texts
+using a pre-trained transformer model, processing the texts in batches,
+and returns all features as a single NumPy array.
+'''
 
 def extract_cls_features(texts: List[str], tokenizer, model, batch_size: int = 32) -> np.ndarray:
     """Extract CLS token features from texts"""
@@ -126,7 +144,8 @@ def extract_cls_features(texts: List[str], tokenizer, model, batch_size: int = 3
             return_tensors="pt",
             max_length=512
         )
-        
+        encoded = {k: v.to(config.device) for k, v in encoded.items()}
+
         # Get model outputs
         with torch.no_grad():
             outputs = model(**encoded)
@@ -137,11 +156,21 @@ def extract_cls_features(texts: List[str], tokenizer, model, batch_size: int = 3
             
     return np.concatenate(all_features, axis=0)
 
+'''
+This function runs the SVM baseline:
+- extracts CLS features from train, validation, and test splits,
+- trains a LinearSVC on training features,
+- evaluates performance on training, validation, and test sets.
+
+Returns a dictionary with validation and test metrics.
+'''
+
 def run_svm_baseline(use_wandb: bool = False):
     ds = load_dataset(config.dataset_name)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     model = AutoModel.from_pretrained(config.model_name)
-    
+    model.to(config.device)
+
     print("\nExtracting features...")
     X_train = extract_cls_features(ds["train"]["text"], tokenizer, model)
     y_train = np.array(ds["train"]["label"])
@@ -203,4 +232,7 @@ def run_svm_baseline(use_wandb: bool = False):
     if "test" in ds:
         test_metrics = evaluate_split(X_test_scaled, y_test, "Test")
     
-    return val_metrics.get("accuracy", 0)
+    return {
+    "validation": val_metrics,
+    "test": test_metrics if "test" in ds else None
+}

@@ -90,10 +90,11 @@ using Hugging Face Trainer.
 
 Args:
     lr (float): Learning rate for the optimizer. Default is 2e-5.
-    epochs (int): Number of training epochs. Default is 3.
+    epochs (int): Number of training epochs. Default is 5.
     batch_size (int): Batch size for both training and evaluation. Default is 16.
     output_dir (str): Directory to save checkpoints, logs, and the best model. Default is "runs/distilbert_finetuned".
     use_wandb (bool): Whether to log metrics to Weights & Biases. Default is False.
+    use_fixed_padding (bool): Whether to use fixed padding (max_length) for input sequences. Default is False.
 
 Returns:
     - train_result: the Hugging Face `TrainOutput` object containing training loss, global step, and metrics.
@@ -103,7 +104,7 @@ Returns:
 
 def fine_tune_model(
     lr: float = 2e-5,
-    epochs: int = 3,
+    epochs: int = 5,
     batch_size: int = 16,
     output_dir: str = "runs/distilbert_finetuned",
     use_wandb: bool = False,

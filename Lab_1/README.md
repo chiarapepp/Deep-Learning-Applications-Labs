@@ -1,7 +1,8 @@
 # Laboratory 1 - Deep Neural Networks: MLPs, ResMLPs, and CNNs
 
 ## Overview
-This laboratory explores deep neural network architectures and their training dynamics, focusing on MLPs, Residual MLPs (ResMLPs), and CNNs trained on standard image classification datasets (MNIST, CIFAR-10, CIFAR-100). The key objectives are:
+This laboratory explores deep neural network architectures and their training dynamics, focusing on MLPs, Residual MLPs (ResMLPs), and CNNs trained on standard image classification datasets (MNIST, CIFAR-10, CIFAR-100). 
+The key objectives are:
 
 - Reproducing (at a smaller scale) results from the paper: [*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385).
 - Understanding the effect of residual connections on model performance.
@@ -41,35 +42,32 @@ Lab_1/
   - Suitable for feature extraction and transfer learning.
 
 ### Datasets
-- **MNIST**: 28×28 grayscale digit (10 classes)
-- **CIFAR-10**: 32×32 color image (10 classes)
-- **CIFAR-100**: 32×32 color image (100 classes)
+- **MNIST**: 28×28 grayscale digit (10 classes).
+- **CIFAR-10**: 32×32 color image (10 classes).
+- **CIFAR-100**: 32×32 color image (100 classes).
 
-## Usage
+### Requirements
+All core dependencies are already listed in the main repository’s `requirements.txt`.
 
-### Quick Start
-
-1. **Install dependencies**:
-```bash
+Alternatively, it's possible to install them manually: 
+```bash 
 pip install torch torchvision tqdm matplotlib scikit-learn wandb numpy
 ```
-
-2. **Login to Weights & Biases** (optional but recommended):
+(Optional but recommended) Log in to Weights & Biases:
 ```bash
 wandb login
 ```
 
-
 ## Exercise 1: Verification of ResNet findings on MLPs and CNNs
 Train and evaluate MLPs and CNNs on MNIST/CIFAR-10 with varying depth, width, normalization, residual connections, and learning rate schedulers.
 
-Run via command line using main_ex1.py.
+Run via command line using `main_ex1.py`.
 
 #### Common Arguments
-- `--epochs`: Number of training epochs (default: 50 for MLPs, 75 for CNNs).
-- `--batch_size`: Batch size (default: 128).
-- `--lr`: Learning rate (default: 0.001).
-- `--num_workers`: Data loading workers (default: 4).
+- `--epochs`: Number of training epochs (default: `50` for MLPs, `75` for CNNs).
+- `--batch_size`: Batch size (default: `128`).
+- `--lr`: Learning rate (default: `0.001`).
+- `--num_workers`: Data loading workers (default: `4`).
 - `--use_wandb`: Enable Weights & Biases logging.
 - `--use_scheduler`: Use cosine annealing scheduler.
 
@@ -142,8 +140,8 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 - `--optimizer`: 'SGD' or 'Adam'
 
 
-
 3. **Run all experiments**:
+It's possible to run all the experiments with the provided script:
 ```bash
 chmod +x run_experiments.sh
 ./run_experiments.sh

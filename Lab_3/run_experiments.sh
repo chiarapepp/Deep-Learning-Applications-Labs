@@ -3,11 +3,20 @@
 # ========================================================================================
 # Deep Learning Applications - Laboratory 3
 # ========================================================================================
+
+# =======================================
+# EXERCISE 1: SVM Baseline 
+# =======================================
+
+python main.py --step e13
+
+# ========================================================================================
 # 
 # This script runs:
 # - Token Preprocessing
-# - 2 Fine-tuning experiments of DistilBERT with different lr
-# - 8 Fine-tuning experiments with LoRA (2 learning rates × 2 LoRA alphas × 2 LoRA ranks)
+# - 4 Fine-tuning experiments of DistilBERT with different lr and different padding strategies
+# - 16 Fine-tuning experiments with LoRA (2 learning rates × 2 LoRA alphas/LoRA ranks
+#   x 2 target modules x 2 padding strategies)
 #
 # ========================================================================================
 

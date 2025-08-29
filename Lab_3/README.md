@@ -2,32 +2,42 @@
 
 ## Overview
 
-This laboratory explores the HuggingFace ecosystem for adapting pre-trained transformer models to new tasks. We'll work through sentiment analysis using DistilBERT, progressing from basic feature extraction to full fine-tuning and parameter-efficient methods.
+This laboratory explores the HuggingFace ecosystem for adapting pre-trained transformer models to downstream tasks. The labo mainly explores sentiment analysis on the *"rotten_tomatoes"* dataset using **DistilBERT** as the backbone model.
 
-This lab focuses on adapting pre-trained transformers from the HuggingFace ecosystem to new tasks. 
-In this laboratory, the Rotten Tomatoes movie review dataset is employed for sentiment analysis. The activities carried out include:
+
+The main objectives are:
 
 - Exploration of the dataset and probing of pre-trained models.
 - Construction of a stable baseline using a pre-trained DistilBERT model.
-- Tokenization of the dataset and fine-tuning of the model with HuggingFace Trainer.
+- Tokenization of the dataset and fine-tuning of the model with HuggingFace `Trainer`.
 - Application of parameter-efficient fine-tuning using LoRA.
 
-
-## Setup and Installation
-
-### Prerequisites
-Should have been already installed in the requirements.txt. 
-However should have be: 
-```bash
-pip install torch torchvision torchaudio
-pip install transformers datasets accelerate
-pip install scikit-learn numpy pandas
-pip install wandb peft  
+### Project Structure
+```
+Lab_3/
+├── main.py                    # Main entry point with argument parsing
+├── exercise1.py               # Dataset exploration and SVM baseline
+├── exercise2.py               # Full model fine-tuning with Trainer
+├── exercise3.py               # Parameter-efficient fine-tuning with LoRA
+├── utils.py                   # Configuration and utility functions
+├── run_experiments.sh         # Comprehensive experiment runner script
+└── README.md                  # This file
 ```
 
-### Running Experiments
+### Requirements
+All core dependencies are already listed in the main repository’s `requirements.txt`.
 
-All experiments are managed through a single script main.py. The `--step` argument selects the exercise to run.
+Alternatively, it's possible to install them manually: 
+```bash 
+pip install torch transformers datasets scikit-learn numpy tqdm wandb peft
+```
+(Optional but recommended) Log in to Weights & Biases:
+```bash
+wandb login
+```
+## Running Experiments
+
+All experiments are managed through a single script `main.py.` The `--step` argument selects the exercise to run.
 
 ```bash
 # Exercise 1
@@ -35,151 +45,153 @@ All experiments are managed through a single script main.py. The `--step` argume
 python main.py --step e11
 python main.py --step e12
 
-# Run SVM baseline (Exercise 1.3)
+# Run SVM baseline (Exercise 1.3) (optional wandb log)
 python main.py --step e13 
 
 # Tokenize dataset for fine-tuning (Exercise 2.1)
-python main.py --step e21
+python main.py --step e21 
 
 # Fine-tune DistilBERT with Trainer (Exercise 2.3)
-python main.py --step e23 --epochs 3 --batch_size 16 --use_wandb
+python main.py --step e23 $ARGS_finetuning
 
 # Fine-tune DistilBERT using LoRA (Exercise 3.1)
-python main.py --step e31 --lora_rank 8 --lora_alpha 16
+python main.py --step e31 $ARGS_finetuning_LORA
 ```
-#### Arguments 
+### Arguments 
 
-- `--subset`: It's possible to use a smaller subset of the dataset for faster testing.
-- `--lr`: Learning rate for fine-tuning (default: 2e-5).
-- `--epochs`: Number of training epochs (default: 3).
-- `--batch_size`: Training batch size (default: 16).
-- `--lora_alpha`: LoRA alpha parameter (default: 32).
-- `--lora_rank`: LoRA rank parameter (default: 8).
-- `--use_wandb`: Enable Weights & Biases logging.
-- `--output_dir`: Directory for saving models and logs.
+1. Exercise 1.2: Model and tokenizer exploration
+    - `--sample_text`: Optional input text(s) for testing the tokenizer.
 
+2. Finetuning hyperparameters
+    - `--lr`: Learning rate for fine-tuning (default: `2e-5`).
+    - `--epochs`: Number of training epochs (default: `5`).
+    - `--batch_size`: Training batch size (default: `16`).
+    - `--use_fixed_padding`: Use fixed padding to `max_length=512`, if it's not passed, by default, padding is dynamic.
 
-## Observations and Results
+3. LoRA parameters
+    - `--lora_alpha`: LoRA alpha parameter (default: `32`).
+    - `--lora_rank`: LoRA rank parameter (default: `8`).
+    - `--target_modules`: Target modules to apply LoRA. Examples: `q_lin, k_lin, v_lin, out_lin` / `q_lin, k_lin, v_lin, out_lin lin1 lin2`.
+
+4. Output and logging
+    - `--output_dir`: Directory for saving models and logs.
+    - `--use_wandb`: Enable Weights & Biases logging.
+    - `--run_name`: Name of the WandB run (optional, there are already automated run_name but it's possible to use a custom one).
+
+### Finetuning Experiment Suite
+It's possible to run all the main finetuning experiments with the provided script:
+
+```bash
+chmod +x run_experiments.sh
+./run_experiments.sh
+```
+
+## Experiments and Results
 
 ### Exercise 1: Dataset and Model Exploration
+In this exercise, we explored the Rotten Tomatoes dataset and the pre-trained DistilBERT model. 
+Key observations:
+1. **Dataset structure and splits**:
+    - The dataset contains **5,331** positive and **5,331** negative sentences (label distribution is balanced across splits).
+    - Standard splits (train (8530 samples), validation (1066), test (1066)) were available.
 
-#### 1.1 Dataset Exploration
-**Goal**: Understand the Rotten Tomatoes movie review dataset structure.
+2. **Tokenizer and sample exploration**:
+    - Sample sentences were used to understand how the tokenizer works. Tokenizer correctly splits text into subword tokens and handles padding/truncation automatically.
+    - The tokenizer converts text into subword tokens and adds special tokens like `[CLS]` (ID `101`) at the start of the sentence and `[SEP]` (ID `102`) at the end. 
+    - The [CLS] token embedding represents the full sentence and can be used for downstream tasks.
+    - Padding and truncation are used to handle different text lengths, ensuring a consistent size for batch processing.
+    - DistilBERT outputs hidden states of size `768` for each token.
 
-**What we do**:
-- Load the dataset using `datasets.load_dataset("rotten_tomatoes")`
-- Explore splits (train/validation/test) and their sizes
-- Analyze label distribution (positive/negative reviews)
-- Examine sample data structure
+3. **SVM baseline**:
+    - The pre trained `DistilBERT` model was used as a feature extractor. 
+    - `CLS` token embeddings were extracted from the training and validation sets.
+    - A **Linear SVM classifier** trained on these features provides a simple but stable baseline for sentiment classification.
+    - Metrics (accuracy, precision, recall, F1) give an initial reference point before fine-tuning the transformer.
 
-**Key findings**:
-- 5,331 positive and 5,331 negative movie reviews
-- Balanced dataset with 50/50 split
-- Text samples are preprocessed sentences
+    The results were  
+Validation Results:
+  Accuracy:  0.8180
+  Precision: 0.8317
+  Recall:    0.7974
+  F1 Score:  0.8142
 
+Test Results:
+  Accuracy:  0.7946
+  Precision: 0.8054
+  Recall:    0.7767
+  F1 Score:  0.7908
 
+### Exercise 2: Tokenization, Model Setup, and Fine-tuning
+This exercise, located in `exercise2.py`, prepared the Rotten Tomatoes dataset for fine-tuning a DistilBERT model for binary sentiment classification.
 
-#### 1.2 Model and Tokenizer Investigation
-**Goal**: Understand how DistilBERT processes text inputs.
+**Dataset Tokenization**:
+In `exercise2.py` is defined a function called `tokenize_dataset` that returns a Hugging Face `DatasetDict` with tokenized splits (e.g., train, validation, test). Each split contains the original text and label plus: 
+    - `input_ids` → numerical token IDs 
+    - `attention_mask` → indicating which tokens are real and which are padding.
 
-**What we do**:
-- Load DistilBERT model and tokenizer using `AutoModel` and `AutoTokenizer`
-- Tokenize sample texts to see input format
-- Pass tokens through the model to examine outputs
-- Understand the `[CLS]` token and hidden states structure
+In particular it works by using a function (tokenize_function) that takes a batch of examples and applies the pretrained tokenizer (tokenizer = AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')) with arguments the batch, truncation = True (to fit the model), and optional padding definition , and max_length =512 (classico per distilbert ??)
 
-**Key insights**:
-- DistilBERT produces contextualized embeddings for each token
-- The `[CLS]` token (first token) represents the entire sequence
-- Output shape: `(batch_size, sequence_length, hidden_size)`
-- Hidden size is 768 for DistilBERT-base
-
-
-#### 1.3 SVM Baseline
-**Goal**: Establish a performance baseline using traditional ML on transformer features.
-
-**Approach**:
-1. Extract `[CLS]` token embeddings from all text samples
-2. Use these 768-dimensional features to train a linear SVM
-3. Evaluate on validation/test sets
-
-**Why this matters**:
-- Provides a stable baseline for comparison
-- Shows the power of pre-trained representations even without fine-tuning
-- Fast to train and evaluate
-
-**Expected results**:
-- Validation accuracy: ~80-85%
-- Test accuracy: ~78-82%
-- Much faster than full fine-tuning
+For the padding possibilieties it's possible to pick fixed padding ("max_length") or no padding at tokenization time (False). 
+padding (bool, str or PaddingStrategy, optional, defaults to False) — Activates and controls padding. Accepts the following values:
+True or 'longest': Pad to the longest sequence in the batch (or no padding if only a single sequence is provided).
+'max_length': Pad to a maximum length specified with the argument max_length or to the maximum acceptable input length for the model if that argument is not provided.
+False or 'do_not_pad' (default): No padding (i.e., can output a batch with sequences of different lengths).
 
 
+Here’s what each option means and what happens:
 
-### Exercise 2: Fine-tuning DistilBERT
+- padding=False (default in this exercise when use_fixed_padding is not called): What it does: Do not add any padding during tokenization. Examples keep their natural lengths (after truncation to max_length if needed). 
 
-#### 2.1 Dataset Tokenization
-**Goal**: Prepare the dataset for transformer training by tokenizing all text.
+How batches are padded then: At training time, DataCollatorWithPadding pads dynamically per batch to the longest example in that batch.
 
-**Process**:
-- Apply tokenizer to all dataset splits using `Dataset.map()`
-- Add `input_ids` and `attention_mask` to each sample
-- Maintain original `text` and `label` fields
-- Cache tokenized data for reuse
+This is particularly good because of 
+- Efficiency: Less wasted computation and memory because short sequences aren’t padded up to a global maximum.
+- Trade-offs: Batch shapes vary at runtime. This is generally fine (and typical) on CPU/GPU training.
 
-**Technical details**:
-- Use `truncation=True` to handle long sequences
-- Don't pad here - padding handled dynamically during training
-- Batched processing for efficiency
+- adding="max_length" (when use_fixed_padding=True) : Always pad each example to max_length=512 tokens (and also truncate any longer example to 512). 
 
+I decided to do for every one of my experiments both padding option and what I found was that 
+dynamic paddis is \sim 7.5x more fast a parità of the other parameters. 
 
+In particular for example for the case of DistilBErt finetuning (--batch_size 16 --epochs 5 --lr 2e-5): 
+Dynamic Padding-> Train runtime: 103.6s (~412 samples/s, 25.8 steps/s)
+Fixed Padding- > Train runtime: 781.5s (~54.6 samples/s, 3.4 steps/s)
 
-#### 2.2 Model Setup
-**Goal**: Configure DistilBERT for sequence classification.
+And for DistilBErt finetuning with Lora (--batch_size 16 --epochs 5 --lr 2e-5 --lora_rank 8 --lora alpha 32): 
+Dynamic Padding:58.8s, ~726 samples/s, 45.4 steps/s
+Fixed Padding:709.2s, ~60 samples/s, 3.8 steps/s
+Dynamic padding rimane ~12x più veloce.
 
-**Key concept**: 
-- `AutoModelForSequenceClassification` automatically adds a classification head
-- Random initialization of the classification layer
-- Pre-trained weights for the transformer backbone
+![DistilBERT comparison padding fixed vs dynamics](images/d_p_lora.png.png)
+![DistilBERT+ Lora comparison padding fixed vs dynamics](images/dynamic_fixed_padding.png.png)
+Speed & memory: Dynamic batch padding is typically faster and lighter.
 
-#### 2.3 Fine-tuning with Trainer
-**Goal**: Train the entire model end-to-end for optimal performance.
+Shape uniformity: Fixed padding yields constant shapes at the cost of extra compute/memory.
 
-**Training setup**:
-- Learning rate: 2e-5 (typical for transformers)
-- Batch size: 16-32 (adjust for your hardware)
-- Epochs: 3-5 (avoid overfitting)
-- Evaluation every epoch
-- Save best model based on accuracy
+Caching: Padding done at tokenization time is baked into the saved dataset; dynamic padding is applied on the fly per training batch.
+### Fine-tuning Distilbert
+For the fine tuning of the DistilBERT model for binary sequence classification I used Hugging Face's `Trainer` API. 
+It supports configurable learning rate, number of epochs, batch size, asnd padding strategy (dynamic or fixed). 
+I decided to do the experiments with 5 epoch, since BERT models (Transformer models) usually convergono veloce nelle prime epoche. La batch size è stata messa a 16 standard.
+Infine ho svolto un confronto tra diversi learning rate.
 
-**Expected improvements**:
-- Should achieve 85-90% accuracy
-- 5-10% improvement over SVM baseline
-- Takes significantly longer to train
-
+- With a learning rate of 2e-5, the model achieved a lower training loss (~0.19), indicating stable and accurate learning.
+- With a learning rate of 2e-4, the loss remained higher (~0.22), suggesting that a too high learning rate causes oscillations and reduces the model's generalization capability.
+- No significant differences were observed between dynamic padding and fixed padding to 512 tokens: performance remained comparable, but fixed padding led to longer runtimes (more tokens processed on average).
 
 
-### Exercise 3: Advanced Techniques
+### Exercise 3: Efficient Fine-tuning with LoR
+Per quanto riguarda l'esercizio 3, ho deciso di utilizzare LoRa e ho deciso di utilizzare come parametri Lora rank e alpha loro e loro. 
+Poi ho deciso di rendere possibile scegleire quali moduli applicare LoRa , e ho fatto vari esperimenti, il variare del padding, il variare dei parametri, i valori del learning rate e i moduli scelti. 
 
-#### 3.1 LoRA (Parameter-Efficient Fine-tuning)
-**Goal**: Achieve similar performance with much fewer trainable parameters.
+Le osservazioni sono : 
+verall, LoRA models achieved competitive results compared to full fine-tuning while reducing computational costs.
+- With a learning rate of 2e-5, ranks 8/α=32 and 16/α=64, the training loss stayed low (~0.22–0.25) and test metrics were good.
+- With a learning rate of 2e-4, performance degraded: the loss remained higher and test/validation metrics dropped, as also observed in full fine-tuning.
+- Extending target modules (q_lin, k_lin, v_lin, out_lin, lin1, lin2) did not provide substantial advantages over only tuning attention layers. This suggests that localized adaptation on attention blocks is sufficient to capture the necessary task information.
 
-**LoRA concept**:
-- Only fine-tune low-rank adaptation matrices
-- Typically 0.1-1% of original parameters
-- Faster training, less memory usage
-- Often achieves 95%+ of full fine-tuning performance
 
-**Configuration**:
-- Rank (r): 8-16 (controls adaptation capacity)
-- Alpha: 16-32 (scaling factor)
-- Target modules: attention layers (`q_lin`, `v_lin`, etc.)
-
-**Benefits**:
-- 10x faster training
-- Much less GPU memory required
-- Easy to switch between different adaptations
-
-## 📊 Expected Results Comparison
+### Results Comparison
 
 | Method | Parameters Trained | Training Time | Validation Acc | Test Acc |
 |--------|-------------------|---------------|----------------|----------|
@@ -187,120 +199,19 @@ python main.py --step e31 --lora_rank 8 --lora_alpha 16
 | Full Fine-tuning | ~67M (all) | 15-30 minutes | ~88% | ~85% |
 | LoRA Fine-tuning | ~0.3M (adapters) | 5-10 minutes | ~87% | ~84% |
 
-## 🔧 Hyperparameter Tuning Tips
 
-### Learning Rate
-- **Full fine-tuning**: 1e-5 to 5e-5
-- **LoRA**: Can be higher, 1e-4 to 5e-4
-- Use learning rate scheduler for better convergence
 
-### Batch Size
-- **Small GPU**: 8-16
-- **Large GPU**: 32-64
-- Gradient accumulation if memory constrained
+### Summary of Trends
+- A learning rate of 2e-5 is optimal for both full fine-tuning and LoRA.
+- Using fixed padding increases runtime without improving performance.
+- LoRA maintains comparable performance to full fine-tuning while reducing computational cost, confirming its effectiveness for efficient Transformer adaptation.
 
-### LoRA Parameters
-- **Rank**: Start with 8, increase to 16 if underfitting
-- **Alpha**: Usually 2x the rank
-- **Dropout**: 0.1 for regularization
-
-## 🚨 Common Issues and Solutions
-
-### Memory Issues
-```python
-# Reduce batch size
-per_device_train_batch_size=8
-
-# Enable gradient checkpointing
-model.gradient_checkpointing_enable()
-
-# Use gradient accumulation
-gradient_accumulation_steps=4
-```
-
-### Slow Training
-```python
-# Use smaller subset for debugging
-python main.py --step e23 --subset 1000
-
-# Enable mixed precision
-fp16=True  # in TrainingArguments
-
-# Reduce sequence length
-max_length=256  # instead of 512
-```
-
-### Poor Performance
-- Check learning rate (might be too high/low)
-- Verify data preprocessing
-- Ensure balanced evaluation
-- Try different random seeds
-
-## 📈 Advanced Extensions
-
-### Different Datasets
-```python
-# Try other sentiment datasets
-dataset = load_dataset("stanfordnlp/sst2")  # Stanford Sentiment
-dataset = load_dataset("imdb")              # IMDB Reviews
-```
-
-### Other Models
-```python
-# Try different transformer architectures
-model = "roberta-base"
-model = "bert-base-uncased"
-model = "albert-base-v2"
-```
-
-### Multi-class Classification
-```python
-# Modify for multi-class problems
-num_labels=5  # for 5-star rating prediction
-```
-
-## 🧪 Experimental Ideas
-
-1. **Ensemble Methods**: Combine SVM and transformer predictions
-2. **Data Augmentation**: Use back-translation or paraphrasing
-3. **Domain Adaptation**: Fine-tune on movie reviews, test on product reviews
-4. **Prompt Learning**: Use prompt-based approaches
-5. **Knowledge Distillation**: Use larger model to teach smaller one
-
-## 📝 Lab Report Structure
-
-### 1. Introduction
-- Explain transformer fine-tuning motivation
-- Describe the sentiment analysis task
-
-### 2. Dataset Analysis
-- Present dataset statistics and exploration findings
-- Show sample data and label distribution
-
-### 3. Methodology
-- Detail each approach (SVM, full fine-tuning, LoRA)
-- Explain hyperparameter choices
-- Describe evaluation metrics
-
-### 4. Results
-- Present performance comparison table
-- Include training curves if using wandb
-- Analyze computational efficiency
-
-### 5. Discussion
-- Compare different approaches
-- Discuss when to use each method
-- Analyze failure cases
-
-### 6. Conclusion
-- Summarize key findings
-- Suggest future improvements
 
 ## Resources
 
 - [HuggingFace Transformers Documentation](https://huggingface.co/docs/transformers/)
-https://huggingface.co/tasks/feature-extraction
-https://huggingface.co/docs/transformers/main/en/main_classes/trainer
+- [](https://huggingface.co/tasks/feature-extraction)
+- [](https://huggingface.co/docs/transformers/main/en/main_classes/trainer)
 - [PEFT Library Guide](https://huggingface.co/docs/peft/)
 - [LoRA Paper](https://arxiv.org/abs/2106.09685)
 - [DistilBERT Paper](https://arxiv.org/abs/1910.01108)

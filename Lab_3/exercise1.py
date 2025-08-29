@@ -16,23 +16,15 @@ import wandb
 # -------------------------------------
 
 '''
-This function loads a dataset, optionally selects a subset, 
-prints information about splits, sizes, label distribution, 
+This function loads a dataset, prints information about splits, sizes, label distribution, 
 and shows a sample from the training set.
 '''
 
-def load_and_explore_dataset(subset: Optional[int] = None) -> DatasetDict:
+def load_and_explore_dataset() -> DatasetDict:
     """Load dataset and explore its structure"""
     print(f"\nLoading dataset: {config.dataset_name}")
     
     ds = load_dataset(config.dataset_name)
-    
-    if subset is not None:
-        print(f"Using subset of {subset} samples per split")
-        ds = DatasetDict({
-            split: data.select(range(min(len(data), subset)))   # Limit to subset size  
-            for split, data in ds.items()
-        })
     
     print("\nDataset splits and sizes:")
     for split, data in ds.items():
@@ -65,24 +57,19 @@ tokenizes sample texts, prints tokenization details,
 and shows the shape of CLS embeddings from the last hidden state.
 '''
 
-def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None, use_dataset: bool = True):
+def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None):
     print("\nExploration of pre-trained model and tokenizer outputs")
     
     # Load model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     model = AutoModel.from_pretrained(config.model_name)
     model.to(config.device)
-    
-    if use_dataset:
+
+    if sample_texts is None:
         ds = load_dataset(config.dataset_name)
-        sample_texts = [ds["train"][0]["text"], ds["train"][1]["text"], ds["train"][2]["text"]]
-    elif sample_texts is None:
-        sample_texts = [
-            "This movie was absolutely fantastic! Great acting and plot.",
-            "Boring and predictable. Waste of time and money.",
-            "An average film with some good moments but nothing special."
-        ]
-    
+        sample_texts = [ds["train"][i]["text"] for i in range(3)]
+    else:
+        sample_texts = sample_texts
 
     print("Sample texts:")
     for i, text in enumerate(sample_texts):
@@ -220,10 +207,10 @@ def run_svm_baseline(use_wandb: bool = False):
         
         if use_wandb:
             wandb.log({
-                f"{split_name}/accuracy": acc,
-                f"{split_name}/precision": prec,
-                f"{split_name}/recall": rec,
-                f"{split_name}/f1": f1
+                f"{split_name.lower()}/accuracy": acc,
+                f"{split_name.lower()}/precision": prec,
+                f"{split_name.lower()}/recall": rec,
+                f"{split_name.lower()}/f1": f1
             })
 
         return {"accuracy": acc, "precision": prec, "recall": rec, "f1": f1}

@@ -18,8 +18,6 @@ def get_args():
     )
     
     # Dataset options
-    parser.add_argument("--subset", type=int, help="Use subset of data for testing")
-    
     parser.add_argument("--sample_text", type=str, nargs="+", default=None,
                         help="Optional sample text(s) for exploration")
 
@@ -55,12 +53,12 @@ def main():
     
     if args.step == "e11":
         # Exercise 1.1: Dataset exploration
-        load_and_explore_dataset(args.subset)
+        load_and_explore_dataset()
         
     elif args.step == "e12":
         # Exercise 1.2: Model and tokenizer exploration
-        explore_model_and_tokenizer(sample_texts=args.sample_text, use_dataset=args.sample_text is None)
-        
+        explore_model_and_tokenizer(sample_texts=args.sample_texts)
+
     elif args.step == "e13":
         # Exercise 1.3: SVM baseline
         run_svm_baseline(args.use_wandb)

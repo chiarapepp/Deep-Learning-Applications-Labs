@@ -20,7 +20,7 @@ Args:
     lora_rank (int): Rank of the LoRA adaptation matrices. Default is 8.
     lora_alpha (int): Alpha scaling factor for LoRA layers. Default is 16.
     lr (float): Learning rate for the optimizer. Default is 2e-5.
-    epochs (int): Number of training epochs. Default is 3.
+    epochs (int): Number of training epochs. Default is 5.
     batch_size (int): Batch size for both training and evaluation. Default is 16.
     output_dir (str): Directory to save checkpoints, logs, and the best model. Default is "runs/distilbert_lora".
     use_wandb (bool): Whether to log metrics and training info to Weights & Biases. Default is False.
@@ -36,7 +36,7 @@ def fine_tune_with_lora(
     lora_rank: int = 8,
     lora_alpha: int = 16,
     lr: float = 2e-5,
-    epochs: int = 3,
+    epochs: int = 5,
     batch_size: int = 16,
     output_dir: str = "runs/distilbert_lora",
     use_wandb: bool = False,

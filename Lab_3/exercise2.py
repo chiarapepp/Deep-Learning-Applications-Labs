@@ -36,16 +36,21 @@ class TQDMProgressCallback(TrainerCallback):
 Function that tokenize the dataset and save it to cache
 """
 
-def tokenize_dataset() -> DatasetDict:
-    
+def tokenize_dataset(use_fixed_padding: Optional[bool] = None) -> DatasetDict:
+
     ds = load_dataset(config.dataset_name)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
-    
+
+    if use_fixed_padding is None:
+        chosen_padding = False
+    else:
+        chosen_padding = "max_length"
+
     def tokenize_function(batch):
         return tokenizer(
             batch["text"], 
             truncation=True, 
-            padding=False,  # Will pad dynamically during training (DataCollatorWithPadding)
+            padding=chosen_padding,  # Will pad dynamically during training (DataCollatorWithPadding)  -> Using padding = max_length take the training from
             max_length=512
         )
     
@@ -105,6 +110,8 @@ def fine_tune_model(
     batch_size: int = 16,
     output_dir: str = "runs/distilbert_finetuned",
     use_wandb: bool = False,
+    run_name: str = None,
+    use_fixed_padding: Optional[bool] = None
 ):
     
     if os.path.exists(config.tokenized_path):
@@ -112,22 +119,25 @@ def fine_tune_model(
         print(f"Loaded tokenized dataset from cache")
     else:
         print("No cached tokenized dataset found. Tokenizing now...")
-        tokenized_ds = tokenize_dataset()
-    
+        tokenized_ds = tokenize_dataset(use_fixed_padding=use_fixed_padding)
+
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     # ------------------------------------------
     # EXERCISE 2.2: Setup Model for Sequence Classification
     # ------------------------------------------
     model = AutoModelForSequenceClassification.from_pretrained(
         config.model_name,
-        num_labels=2,
+        num_labels=2,    # Sentiment analysis: Positive/Negative
         id2label={0: "negative", 1: "positive"},   # Map label IDs to label names
         label2id={"negative": 0, "positive": 1}    # Map label names to label IDs
     )
     
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
-    run_name = f"distilbert_finetuning_lr:{lr}"
+    if run_name is None:
+        run_name = f"distilbert_finetuning_lr:{lr}"
+    else:
+        run_name = run_name
 
     if use_wandb:
         wandb.init(
@@ -174,7 +184,8 @@ def fine_tune_model(
     
     print(f"Starting fine-tuning...")
 
-    train_result = trainer.train()
+    trainer.train()
+    trainer.save_model(f"{output_dir}/model_final")
 
     # Hugging face Trainer add the prefix eval_ automatically
     if "test" in tokenized_ds:

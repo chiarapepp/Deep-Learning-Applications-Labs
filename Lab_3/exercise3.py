@@ -24,6 +24,7 @@ Args:
     batch_size (int): Batch size for both training and evaluation. Default is 16.
     output_dir (str): Directory to save checkpoints, logs, and the best model. Default is "runs/distilbert_lora".
     use_wandb (bool): Whether to log metrics and training info to Weights & Biases. Default is False.
+    target_modules (list): List of target modules for LoRA adaptation. Default is None.
 
 Returns:
     - trainer.train() returns the Hugging Face `TrainOutput` object containing
@@ -38,14 +39,14 @@ def fine_tune_with_lora(
     epochs: int = 3,
     batch_size: int = 16,
     output_dir: str = "runs/distilbert_lora",
-    use_wandb: bool = False
+    use_wandb: bool = False,
+    run_name: str = None,
+    target_modules: list = None,
+    use_fixed_padding: Optional[bool] = None
 ):
-    
-    if os.path.exists(config.tokenized_path):
-        tokenized_ds = load_from_disk(config.tokenized_path)
-    else:
-        tokenized_ds = tokenize_dataset()
-    
+
+    tokenized_ds = tokenize_dataset(use_fixed_padding=use_fixed_padding)
+
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     base_model = AutoModelForSequenceClassification.from_pretrained(
         config.model_name,
@@ -55,6 +56,11 @@ def fine_tune_with_lora(
     )
     for name, param in base_model.named_parameters():
         print(f"parameter: {name}, Shape: {param.shape}, Requires grad: {param.requires_grad}")
+
+    if target_modules is None:
+        target_modules = ["q_lin", "k_lin", "v_lin", "out_lin"]
+    else:
+        target_modules = target_modules
 
     lora_config = LoraConfig(
         task_type=TaskType.SEQ_CLS,
@@ -74,11 +80,14 @@ def fine_tune_with_lora(
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"\nTotal parameters: {total_params:,}")
     print(f"Trainable parameters: {trainable_params:,} ({trainable_params / total_params:.2%})")
-    print(f"LoRA parameters: {sum(p.numel() for p in model.parameters() if 'lora' in p.name):,}")
+    print(f"LoRA parameters: {sum(p.numel() for n, p in model.named_parameters() if 'lora' in n):,}")
 
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
-    run_name = f"finetuning_with_lora_r:{lora_rank}_a:{lora_alpha}_lr:{lr}"
+    if run_name is None:
+        run_name = f"finetuning_with_lora_r:{lora_rank}_a:{lora_alpha}_lr:{lr}"
+    else:
+        run_name = run_name
 
     if use_wandb:
         wandb.init(

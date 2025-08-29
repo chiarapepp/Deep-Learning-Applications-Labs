@@ -27,15 +27,18 @@ def get_args():
     parser.add_argument("--lr", type=float, default=2e-5, help="Learning rate")
     parser.add_argument("--epochs", type=int, default=3, help="Number of epochs")
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size")
+    parser.add_argument("--use_fixed_padding", action="store_true", help="Use fixed padding to max_length (512)")
     
     # LoRA parameters
     parser.add_argument("--lora_rank", type=int, default=8, help="LoRA rank")
     parser.add_argument("--lora_alpha", type=int, default=16, help="LoRA alpha")
-    
+    parser.add_argument("--target_modules", type=str, nargs="+", default=None, help="Target modules for LoRA")
+
     # Output and logging
     parser.add_argument("--output_dir", type=str, default="runs/lab3_experiment")
     parser.add_argument("--use_wandb", action="store_true", help="Use Weights & Biases logging")
-    
+    parser.add_argument("--run_name", type=str, default=None, help="Name of the WandB run")
+
     return parser.parse_args()
 
 def main():
@@ -64,8 +67,8 @@ def main():
         
     elif args.step == "e21":
         # Exercise 2.1: Tokenize dataset
-        tokenize_dataset()
-        
+        tokenize_dataset(use_fixed_padding=args.use_fixed_padding)
+
     elif args.step == "e23":
         # Exercise 2.3: Fine-tune with Trainer
         fine_tune_model(
@@ -74,6 +77,8 @@ def main():
             batch_size=args.batch_size,
             output_dir=args.output_dir,
             use_wandb=args.use_wandb,
+            run_name=args.run_name
+            
         )
         
     elif args.step == "e31":
@@ -86,6 +91,9 @@ def main():
             batch_size=args.batch_size,
             output_dir=args.output_dir,
             use_wandb=args.use_wandb,
+            run_name=args.run_name,
+            target_modules=args.target_modules,
+            use_fixed_padding=args.use_fixed_padding  # Use padding = max_length (512)
         )
     
 

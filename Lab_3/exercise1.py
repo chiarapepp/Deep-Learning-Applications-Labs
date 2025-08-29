@@ -190,6 +190,7 @@ def run_svm_baseline(use_wandb: bool = False):
     if "test" in ds:
         X_test_scaled = scaler.transform(X_test)
     
+    
     if use_wandb:
         wandb.init(
             project="DLA_Lab_3",

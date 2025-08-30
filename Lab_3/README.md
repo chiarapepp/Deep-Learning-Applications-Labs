@@ -213,9 +213,11 @@ LoRA was applied with configurable rank, alpha, and target modules. Experiments 
 
 
 |Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`)| Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`)|
+|---------------|----------------|
 | (`rank=8`, `alpha=32`, Attention+FFN) | (`rank=16`, `alpha=64`, Attention+FFN)| 
 |---------------|----------------|
 | ![comparison_lr](images/r8_a32_tm_lr.png)| ![dynamic](images/r16_a64_tm_lr.png) |
+
                               
 |Training loss for LoRA DistilBERT. Different lines = different r/α and lr settings.|
 |----------------|
@@ -225,13 +227,14 @@ All training was done with a `batch_size=16` and `epochs=5`.
 
 ## Conclusions
 
-| Approach                                     | Trainable Params\* | Test Accuracy | Test F1 | Test Precision | Test Recall |
+| Approach                                     | Trainable Params \* | Test Accuracy | Test F1 | Test Precision | Test Recall |
 | -------------------------------------------- | ---------------- | ------------- | ------- | -------------- | ----------- |
 | Baseline SVM                                 | 1.538k           | 0.7946        | 0.7908  | 0.8054         | 0.7767      |
 | Full Fine-tuning DistilBERT                  | 66.955M          | 0.8537        | 0.8564  | 0.8409         | 0.8724      |
 | LoRA DistilBERT (r=8, α=32, Attention + FFN) | 1.255M           | 0.8443        | 0.8460  | 0.8367         | 0.8555      |
 
-(\* see )
+(\* see `check_parameters`)
+
 **Key Observations**:
 - The SVM is extremely lightweight (~1.5k parameters) and provides a stable baseline.
 - Full fine-tuning of DistilBERT uses all ~66M parameters, achieving the best performance across all metrics.

@@ -106,6 +106,7 @@ In this exercise, I explored the _Rotten Tomatoes_ dataset and the pre-trained D
     - A **Linear SVM classifier** trained on these features provides a simple but stable baseline for sentiment classification.
     - Metrics (accuracy, precision, recall, F1) give an initial reference point before fine-tuning the transformer.
     - SVM Results: 
+    
     | Split      | Accuracy | Precision | Recall | F1 Score |
     | ---------- | -------- | --------- | ------ | -------- |
     | Validation | 0.8180   | 0.8317    | 0.7974 | 0.8142   |
@@ -163,7 +164,7 @@ I evaluated both padding strategies for fine-tuning DistilBERT on the Rotten Tom
 
 For the fine-tuning of DistilBERT with LoRA (rank=8, alpha=32), the difference is even more pronounced:
 
-| Setup                      | Train Runtime | Samples/sec | Steps/sec |
+| Setup   dynamic_fixed_padding                   | Train Runtime | Samples/sec | Steps/sec |
 | -------------------------- | ------------- | ----------- | --------- |
 | Dynamic Padding            | 58.8s         | 726         | 45.4      |
 | Fixed Padding (512 tokens) | 709.2s        | 60          | 3.8       |

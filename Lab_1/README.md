@@ -30,9 +30,9 @@ Lab_1/
 
 ### Implemented Models
 1. **MLP (Multilayer Perceptron)**
-  - Configurable depth and width.
-  - Optional batch normalization.
-  - Standard feedforward architecture.
+- Configurable depth and width.
+- Optional batch normalization.
+- Standard feedforward architecture.
 2. **ResMLP (Residual MLP)**
   - MLP with residual connections between blocks.
   - Each block contains two linear layers with skip connections.

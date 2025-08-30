@@ -1,7 +1,40 @@
 # Laboratory 2 — Deep Reinforcement Learning : REINFORCE on CartPole & LunarLander
 
+## Overview
 This lab implements the REINFORCE algorithm to train an agent in the **CartPole-v1** and **LunarLander-v3** environments using PyTorch. 
 The project supports various enhancements including value baselines, entropy regularization, gradient clipping, and temperature scheduling.
+
+All experiments are tracked with Weights & Biases. You can find the complete logs and results here: [Lab_2 Results](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_2?nw=nwuserchiarapeppicelli).  
+
+Main objectives: 
+
+
+
+### Project Structure
+
+```
+├── main.py           # Entry point for training
+├── reinforce.py      # Core REINFORCE training loop
+├── networks.py       # Policy and value network definitions
+├── utils.py          # Utility functions for training and evaluation
+├── images/           # Folder containing figures/plots/results
+└── README.md         # This file
+```
+
+### Requirements
+All core dependencies are already listed in the main repository’s `requirements.txt`.
+
+Alternatively, it's possible to install them manually: 
+```bash 
+pip 
+```
+(Optional but recommended) Log in to Weights & Biases:
+```bash
+wandb login
+```
+
+
+
 
 - **Training (main script)**:
   - Trains a policy using the REINFORCE algorithm.
@@ -22,16 +55,7 @@ The project supports various enhancements including value baselines, entropy reg
   - Modular structure to allow plug-and-play of environments, policies, and configurations.
   - Command-line arguments for different training and evaluation setups.
   
-## 📁 Folder Structure
 
-```
-├── main.py           # Entry point for training
-├── reinforce.py      # Core REINFORCE training loop
-├── visualize.py      # Visualize a trained agent and render a gif 
-├── networks.py       # Policy and value network definitions
-├── utils.py          # Utility functions for training and evaluation
-└── README.md         # This file
-```
 
 ---
 

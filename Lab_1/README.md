@@ -2,13 +2,15 @@
 
 ## Overview
 This laboratory explores deep neural network architectures and their training dynamics, focusing on MLPs, Residual MLPs (ResMLPs), and CNNs trained on standard image classification datasets (MNIST, CIFAR-10, CIFAR-100). 
-The key objectives are:
+
+All experiments are tracked with Weights & Biases. You can find the complete logs and results here: [Lab_1 Results](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_1?nw=nwuserchiarapeppicelli).  
+
+Main Objectives:
 
 - Reproducing (at a smaller scale) results from the paper: [*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385).
 - Understanding the effect of residual connections on model performance.
 - Investigating training dynamics and gradient flow.
 - Exploring transfer learning through fine-tuning techniques.
-
 
 ### Project Structure
 
@@ -22,6 +24,7 @@ Lab_1/
 ├── utils.py             # Utility functions (gradient analysis, feature extraction)
 ├── run_experiments.sh   # Script to run all experiments
 ├── Models/              # Saved model weights
+├── images/              # Folder containing figures/plots/results
 └── README.md            # This file
 ```
 
@@ -58,6 +61,13 @@ pip install torch torchvision tqdm matplotlib scikit-learn wandb numpy
 wandb login
 ```
 
+**Run all experiments**:
+It's possible to run all the experiments with the provided script:
+```bash
+chmod +x run_experiments.sh
+./run_experiments.sh
+```
+
 ## Exercise 1: Verification of ResNet findings on MLPs and CNNs
 Train and evaluate MLPs and CNNs on MNIST/CIFAR-10 with varying depth, width, normalization, residual connections, and learning rate schedulers.
 
@@ -71,7 +81,7 @@ Run via command line using `main_ex1.py`.
 - `--use_wandb`: Enable Weights & Biases logging.
 - `--use_scheduler`: Use cosine annealing scheduler.
 
-### MLP
+## MLP
 Some examples on how to train and test the MLP/ResMLP models:
 
 ```bash
@@ -99,7 +109,17 @@ When using the MLP model (as opposed to ResMLP), there are two main ways to defi
 
 - Standard architecture with `--width` and `--depth`: This configuration enables a direct comparison with ResMLP, ensuring that both models have a comparable number of layers and units.
 
-### CNN 
+### Results
+
+
+
+
+To better understand why residual connections improve training, we analyzed the gradient flow in deep models.
+We computed the gradient norms of each layer for a single minibatch (Fig. X).
+In the plain 40-layer MLP, the gradient magnitudes vanish in the earliest layers, making training unstable and preventing learning.
+In contrast, the residual MLP of the same depth shows stable gradient norms across layers, confirming that skip connections alleviate vanishing gradients and allow effective training of deep networks.
+
+## CNN 
 The CNN model is implemented using the BasicBlock definition from torchvision in [torchvision](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L59).
 
 Training can be performed with different configurations as shown below:
@@ -140,13 +160,6 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 - `--optimizer`: 'SGD' or 'Adam'
 
 
-3. **Run all experiments**:
-It's possible to run all the experiments with the provided script:
-```bash
-chmod +x run_experiments.sh
-./run_experiments.sh
-```
-
 
 
 
@@ -166,24 +179,6 @@ chmod +x run_experiments.sh
 2. **Fine-tuning Strategies**: Comparison of different unfreezing strategies
 3. **Optimizer Impact**: SGD vs Adam for fine-tuning tasks
 
-## 📈 Monitoring and Results
-
-### Weights & Biases Integration
-- Automatic logging of training/validation metrics
-- Gradient norm visualization
-- Model comparison dashboards
-- Hyperparameter tracking
-
-
-
-## 📚 Key Findings
-
-The experiments demonstrate:
-
-1. **Residual connections enable training of deeper networks** without degradation
-2. **Gradient flow is improved** in networks with skip connections
-3. **Transfer learning benefits** from pre-trained feature representations
-4. **Fine-tuning strategies** significantly impact performance on new tasks
 
 
 
@@ -238,17 +233,6 @@ More material that supports those findings can be found inside the `wandb` proje
 </p>
 
 
-### 🔍 Class Activation Maps (CAMs on Imagenette)
-
-<p align="center">
-  <img src="images/cam_church.jpg" alt="CNN_norm" width="45%" style="margin-right:10px;"/>
-  <img src="images/cam_french_horn.jpg" alt="ResNet_norm" width="45%"/>
-</p>
-
-<p align="center">
-  <img src="images/cam_gas_pump.jpg" alt="CNN_norm" width="45%" style="margin-right:10px;"/>
-  <img src="images/imagenette_CAM_result.jpg" alt="ResNet_norm" width="45%"/>
-</p>
 
 
 

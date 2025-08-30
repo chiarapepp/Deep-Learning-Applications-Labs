@@ -4,6 +4,8 @@
 
 This laboratory explores the HuggingFace ecosystem for adapting pre-trained transformer models to downstream tasks. The lab focuses on sentiment analysis on the *"rotten_tomatoes"* dataset using **DistilBERT** as the backbone model.
 
+All experiments are tracked with Weights & Biases. You can find the complete logs and results here: [Lab_3 Results](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_3?nw=nwuserchiarapeppicelli).  
+
 Main objectives:
 
 - Explore the dataset and probe pre-trained models.
@@ -21,6 +23,7 @@ Lab_3/
 ├── utils.py                   # Configuration and utility functions
 ├── run_experiments.sh         # Comprehensive experiment runner script
 ├── check_parameters.sh        # Script to compute trainable and total parameters for the main models.
+├── images/                    # Folder containing figures/plots/results
 └── README.md                  # This file
 ```
 
@@ -85,9 +88,9 @@ chmod +x run_experiments.sh
 ./run_experiments.sh
 ```
 
-## Experiments and Results
+# Experiments and Results
 
-### Exercise 1: Dataset and Model Exploration
+## Exercise 1: Dataset and Model Exploration
 In this exercise, I explored the _Rotten Tomatoes_ dataset and the pre-trained DistilBERT model (see `exercise1.py`). 
 
 **Key observations:**
@@ -114,22 +117,22 @@ In this exercise, I explored the _Rotten Tomatoes_ dataset and the pre-trained D
 | **Test**       | 0.7946   | 0.8054    | 0.7767 | 0.7908   |
 
 
-### Exercise 2: Tokenization, Model Setup, and Fine-tuning
+## Exercise 2: Tokenization, Model Setup, and Fine-tuning
 This exercise prepared the Rotten Tomatoes dataset for fine-tuning a DistilBERT model for binary sentiment classification (see `exercise2.py` script).
 
 #### **Dataset Tokenization**:
 The `tokenize_dataset` function returns a HuggingFace `DatasetDict` with tokenized splits (train, validation, test). Each split contains the **original text** and **label** plus: 
-    - `input_ids` → numerical token IDs. 
-    - `attention_mask` → indicating which tokens are real and which are padding.
+- `input_ids` → numerical token IDs. 
+- `attention_mask` → indicating which tokens are real and which are padding.
 
 Tokenization uses a `tokenize_function` that processes batches of examples and applies the pretrained tokenizer (`AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')`) with truncation enabled to limit sequences to a maximum length, and *optional padding*.
 
 #### **Padding options**:
 The HuggingFace tokenizer supports multiple padding strategies, controlled by the `padding` argument (`bool`, `str` or `PaddingStrategy`, default `False`):
 
-- `False` (default): No padding is applied during tokenization. Sequences keep their natural lengths (after truncation to `max_length` if specified) and padding is applied dynamically at training time by `DataCollatorWithPadding`, which pads each batch to the length of the longest sequence it contains. This approach is more efficient because short sequences are not unnecessarily padded to a global maximum, leading to less wasted computation and memory. On modern GPUs such as the NVIDIA GeForce RTX 4060 Ti, the overhead of handling variable shapes is negligible. The main drawback is that batch shapes vary at runtime, which may slightly complicate logging, debugging, or exporting models to formats that require fixed-size inputs.
+- `False` (default): No padding is applied during tokenization. Sequences keep their natural lengths (after truncation to `max_length` if specified) and padding is applied dynamically at training time by `DataCollatorWithPadding`, which pads each batch to the length of the longest sequence it contains. This approach is more efficient because short sequences are not unnecessarily padded to a global maximum, leading to less wasted computation and memory.
 
-- `max_length` (fixed padding, enabled when `use_fixed_padding=True`) : Every example is padded to the fixed `max_length` (`512` tokens for DistilBERT) and truncated if longer.This produces uniform batch shapes, which can simplify debugging, visualization, and exporting to ONNX or TorchScript. It can also be useful on older hardware or frameworks that require fixed-size tensors. However, this strategy is computationally heavier, since all sequences—no matter how short—are extended to the maximum length. As a result, training is slower and requires more memory compared to dynamic padding.
+- `max_length` (fixed padding, enabled when `use_fixed_padding=True`) : Every example is padded to the fixed `max_length` (`512` tokens for DistilBERT) and truncated if longer. This produces uniform batch shapes, which can simplify debugging and visualization. It can also be useful on older hardware or frameworks that require fixed-size tensors. However, this strategy is computationally heavier, as a result, training is slower and requires more memory compared to dynamic padding.
 
 **Runtime Comparison: Dynamic vs Fixed Padding**
 I evaluated both padding strategies for fine-tuning DistilBERT on the Rotten Tomatoes dataset (batch size = 16, epochs = 5, learning rate = 2e-5) on an NVIDIA GeForce RTX 4060 Ti, the results show a substantial speed advantage for dynamic padding:
@@ -157,7 +160,7 @@ For the fine-tuning of DistilBERT with LoRA (rank=8, alpha=32), the difference i
 
 These results confirm that dynamic padding provides a substantial speed advantage without compromising accuracy, making it the preferred strategy on modern GPUs.
 
-### Fine-tuning Distilbert
+## Fine-tuning Distilbert
 For fine-tuning the DistilBERT model for binary sequence classification, I used Hugging Face's `Trainer` API. 
 It supports configurable learning rate, number of epochs, batch size, and padding strategy (dynamic or fixed). 
 
@@ -182,11 +185,11 @@ The study focused on comparing two different learning rates (`2e-4` and `2e-5`) 
 |Train Loss over Steps: Learning Rate Comparison| Padding Strategy Comparison|
 |---------------|----------------|
 | ![fixed](images/distil_lr.png)| ![dynamic](images/padding_comp_distil.png) |
-| In blue `lr=2e-4`, in red `lr=2e-5`       | Same fine-tuning parameters except different padding|                               
+| In blue `lr=2e-4`, in red `lr=2e-5`.       | Same fine-tuning parameters except different padding.|                               
 
 There is almost no difference in using either padding strategies except on the runtime.
 
-### Exercise 3: Efficient Fine-tuning with LoRA
+## Exercise 3: Efficient Fine-tuning with LoRA
 LoRA was applied with configurable rank, alpha, and target modules. Experiments varied padding, learning rate, and module selection (see `exercise3.py`).
 
 | Learning Rate | Module Target | LoRA (r, a) | Test Accuracy | Test F1 | Test Precision | Test Recall | 
@@ -231,7 +234,7 @@ All training was done with a `batch_size=16` and `epochs=5`.
 | Full Fine-tuning DistilBERT                  | 66.955M          | 0.8537        | 0.8564  | 0.8409         | 0.8724      |
 | LoRA DistilBERT (r=8, α=32, Attention + FFN) | 1.255M           | 0.8443        | 0.8460  | 0.8367         | 0.8555      |
 
-(\* see `check_parameters`)
+(\* see `check_parameters.py`)
 
 **Key Observations**:
 - The SVM is extremely lightweight (~1.5k parameters) and provides a stable baseline.

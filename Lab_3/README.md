@@ -2,15 +2,14 @@
 
 ## Overview
 
-This laboratory explores the HuggingFace ecosystem for adapting pre-trained transformer models to downstream tasks. The labo mainly explores sentiment analysis on the *"rotten_tomatoes"* dataset using **DistilBERT** as the backbone model.
+This laboratory explores the HuggingFace ecosystem for adapting pre-trained transformer models to downstream tasks. The lab focuses on sentiment analysis on the *"rotten_tomatoes"* dataset using **DistilBERT** as the backbone model.
 
+Main objectives:
 
-The main objectives are:
-
-- Exploration of the dataset and probing of pre-trained models.
-- Construction of a stable baseline using a pre-trained DistilBERT model.
-- Tokenization of the dataset and fine-tuning of the model with HuggingFace `Trainer`.
-- Application of parameter-efficient fine-tuning using LoRA.
+- Explore the dataset and probe pre-trained models.
+- Build a stable baseline using DistilBERT embeddings with a linear classifier.
+- Tokenize the dataset and fine-tune DistilBERT using HuggingFace `Trainer`.
+- Apply parameter-efficient fine-tuning with LoRA (Low-Rank Adaptation).
 
 ### Project Structure
 ```
@@ -59,28 +58,27 @@ python main.py --step e31 $ARGS_finetuning_LORA
 ```
 ### Arguments 
 
-1. Exercise 1.2: Model and tokenizer exploration
+1. **Exercise 1.2: Model and tokenizer exploration**
     - `--sample_text`: Optional input text(s) for testing the tokenizer.
 
-2. Finetuning hyperparameters
+2. **Finetuning hyperparameters**
     - `--lr`: Learning rate for fine-tuning (default: `2e-5`).
     - `--epochs`: Number of training epochs (default: `5`).
     - `--batch_size`: Training batch size (default: `16`).
     - `--use_fixed_padding`: Use fixed padding to `max_length=512`, if it's not passed, by default, padding is dynamic.
 
-3. LoRA parameters
-    - `--lora_alpha`: LoRA alpha parameter (default: `32`).
-    - `--lora_rank`: LoRA rank parameter (default: `8`).
+3. **LoRA parameters**
+    - `--lora_alpha`: LoRA alpha (default: `32`).
+    - `--lora_rank`: LoRA rank (default: `8`).
     - `--target_modules`: Target modules to apply LoRA. Examples: `q_lin, k_lin, v_lin, out_lin` / `q_lin, k_lin, v_lin, out_lin lin1 lin2`.
 
-4. Output and logging
+4. **Output and logging**
     - `--output_dir`: Directory for saving models and logs.
     - `--use_wandb`: Enable Weights & Biases logging.
-    - `--run_name`: Name of the WandB run (optional, there are already automated run_name but it's possible to use a custom one).
+    - `--run_name`: Name of the WandB run (optional). Some default run names are already defined in the code, but you can provide a custom name if desired.
 
 ### Finetuning Experiment Suite
 It's possible to run all the main finetuning experiments with the provided script:
-
 ```bash
 chmod +x run_experiments.sh
 ./run_experiments.sh
@@ -89,15 +87,15 @@ chmod +x run_experiments.sh
 ## Experiments and Results
 
 ### Exercise 1: Dataset and Model Exploration
-In this exercise, we explored the Rotten Tomatoes dataset and the pre-trained DistilBERT model. 
+In this exercise, I explored the _Rotten Tomatoes_ dataset and the pre-trained DistilBERT model (see `exercise1.py`). 
+
 Key observations:
 1. **Dataset structure and splits**:
-    - The dataset contains **5,331** positive and **5,331** negative sentences (label distribution is balanced across splits).
+    - The dataset contains **5,331** positive and **5,331** negative sentences (balanced across splits).
     - Standard splits (train (8530 samples), validation (1066), test (1066)) were available.
 
 2. **Tokenizer and sample exploration**:
-    - Sample sentences were used to understand how the tokenizer works. Tokenizer correctly splits text into subword tokens and handles padding/truncation automatically.
-    - The tokenizer converts text into subword tokens and adds special tokens like `[CLS]` (ID `101`) at the start of the sentence and `[SEP]` (ID `102`) at the end. 
+    - Sample sentences were used to understand tokenizer behavior. It correctly splits text into subword tokens and adds special tokens `[CLS]` (ID `101`) at the start of the sentence and `[SEP]` (ID `102`) at the end. 
     - The [CLS] token embedding represents the full sentence and can be used for downstream tasks.
     - Padding and truncation are used to handle different text lengths, ensuring a consistent size for batch processing.
     - DistilBERT outputs hidden states of size `768` for each token.
@@ -107,59 +105,71 @@ Key observations:
     - `CLS` token embeddings were extracted from the training and validation sets.
     - A **Linear SVM classifier** trained on these features provides a simple but stable baseline for sentiment classification.
     - Metrics (accuracy, precision, recall, F1) give an initial reference point before fine-tuning the transformer.
+    - SVM Results: 
+    | Split      | Accuracy | Precision | Recall | F1 Score |
+    | ---------- | -------- | --------- | ------ | -------- |
+    | Validation | 0.8180   | 0.8317    | 0.7974 | 0.8142   |
+    | Test       | 0.7946   | 0.8054    | 0.7767 | 0.7908   |
 
-    The results were  
-Validation Results:
-  Accuracy:  0.8180
-  Precision: 0.8317
-  Recall:    0.7974
-  F1 Score:  0.8142
-
-Test Results:
-  Accuracy:  0.7946
-  Precision: 0.8054
-  Recall:    0.7767
-  F1 Score:  0.7908
 
 ### Exercise 2: Tokenization, Model Setup, and Fine-tuning
-This exercise, located in `exercise2.py`, prepared the Rotten Tomatoes dataset for fine-tuning a DistilBERT model for binary sentiment classification.
+This exercise prepared the Rotten Tomatoes dataset for fine-tuning a DistilBERT model for binary sentiment classification (see `exercise2.py` script).
 
 **Dataset Tokenization**:
-In `exercise2.py` is defined a function called `tokenize_dataset` that returns a Hugging Face `DatasetDict` with tokenized splits (e.g., train, validation, test). Each split contains the original text and label plus: 
-    - `input_ids` → numerical token IDs 
+The `tokenize_dataset` function returns a HuggingFace `DatasetDict` with tokenized splits (train, validation, test). Each split contains the **original text** and **label** plus: 
+    - `input_ids` → numerical token IDs. 
     - `attention_mask` → indicating which tokens are real and which are padding.
 
-In particular it works by using a function (tokenize_function) that takes a batch of examples and applies the pretrained tokenizer (tokenizer = AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')) with arguments the batch, truncation = True (to fit the model), and optional padding definition , and max_length =512 (classico per distilbert ??)
+Tokenization uses a `tokenize_function` that processes batches of examples and applies the pretrained tokenizer (`AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')`) with truncation enabled to limit sequences to a maximum length, and *optional padding*.
+----------------------------------------------------------------------
+**Padding options**:
+The HuggingFace tokenizer supports multiple padding strategies, controlled by the `padding` argument (`bool`, `str` or `PaddingStrategy`, default `False`):
 
-For the padding possibilieties it's possible to pick fixed padding ("max_length") or no padding at tokenization time (False). 
-padding (bool, str or PaddingStrategy, optional, defaults to False) — Activates and controls padding. Accepts the following values:
-True or 'longest': Pad to the longest sequence in the batch (or no padding if only a single sequence is provided).
-'max_length': Pad to a maximum length specified with the argument max_length or to the maximum acceptable input length for the model if that argument is not provided.
-False or 'do_not_pad' (default): No padding (i.e., can output a batch with sequences of different lengths).
-
-
-Here’s what each option means and what happens:
-
-- padding=False (default in this exercise when use_fixed_padding is not called): What it does: Do not add any padding during tokenization. Examples keep their natural lengths (after truncation to max_length if needed). 
-
-How batches are padded then: At training time, DataCollatorWithPadding pads dynamically per batch to the longest example in that batch.
+- `False` (default): No padding is applied during tokenization. Sequences retain their natural lengths (after truncation to `max_length` if specified). During training, `DataCollatorWithPadding` dynamically pads each batch to the length of the longest sequence in that batch.
 
 This is particularly good because of 
 - Efficiency: Less wasted computation and memory because short sequences aren’t padded up to a global maximum.
 - Trade-offs: Batch shapes vary at runtime. This is generally fine (and typical) on CPU/GPU training.
+
+Advantages:
+    - Efficiency: Reduces wasted computation and memory because short sequences are not padded to a global maximum length.
+    - Flexibility: Handles variable-length sequences naturally.
+
+Trade-offs:
+    - Batch shapes vary at runtime, which can slightly complicate logging or debugging.
+    - Minimal overhead on modern GPU training, such as on an NVIDIA GeForce RTX 4060 Ti, which can easily handle dynamic shapes.
+
+- `max_length` (fixed padding, enabled when `use_fixed_padding=True`) : Every example is padded to the fixed `max_length` (`512` tokens for DistilBERT) and truncated if longer.
+
+Advantages:
+    - Uniform batch shapes simplify debugging and model export (e.g., ONNX or TorchScript).
+    - Some frameworks or older GPUs may require fixed-size tensors.
+
+Trade-offs:
+    - Increased computation and memory usage, as shorter sequences are padded up to the global maximum.
+    - Slower training compared to dynamic padding, especially for smaller batches or shorter sequences.
+
+
 
 - adding="max_length" (when use_fixed_padding=True) : Always pad each example to max_length=512 tokens (and also truncate any longer example to 512). 
 
 I decided to do for every one of my experiments both padding option and what I found was that 
 dynamic paddis is \sim 7.5x more fast a parità of the other parameters. 
 
-In particular for example for the case of DistilBErt finetuning (--batch_size 16 --epochs 5 --lr 2e-5): 
-Dynamic Padding-> Train runtime: 103.6s (~412 samples/s, 25.8 steps/s)
-Fixed Padding- > Train runtime: 781.5s (~54.6 samples/s, 3.4 steps/s)
 
-And for DistilBErt finetuning with Lora (--batch_size 16 --epochs 5 --lr 2e-5 --lora_rank 8 --lora alpha 32): 
-Dynamic Padding:58.8s, ~726 samples/s, 45.4 steps/s
-Fixed Padding:709.2s, ~60 samples/s, 3.8 steps/s
+Dynamic vs Fixed Padding Runtime Comparison (DistilBERT, batch=16, epochs=5, lr=2e-5):
+
+| Setup                      | Train Runtime | Samples/sec | Steps/sec |
+| -------------------------- | ------------- | ----------- | --------- |
+| Dynamic Padding            | 103.6s        | 412         | 25.8      |
+| Fixed Padding (512 tokens) | 781.5s        | 54.6        | 3.4       |
+
+Dynamic vs Fixed Padding with LoRA (rank=8, alpha=32):
+| Setup                      | Train Runtime | Samples/sec | Steps/sec |
+| -------------------------- | ------------- | ----------- | --------- |
+| Dynamic Padding            | 58.8s         | 726         | 45.4      |
+| Fixed Padding (512 tokens) | 709.2s        | 60          | 3.8       |
+
 Dynamic padding rimane ~12x più veloce.
 
 ![DistilBERT comparison padding fixed vs dynamics](images/d_p_lora.png.png)
@@ -169,6 +179,8 @@ Speed & memory: Dynamic batch padding is typically faster and lighter.
 Shape uniformity: Fixed padding yields constant shapes at the cost of extra compute/memory.
 
 Caching: Padding done at tokenization time is baked into the saved dataset; dynamic padding is applied on the fly per training batch.
+
+
 ### Fine-tuning Distilbert
 For the fine tuning of the DistilBERT model for binary sequence classification I used Hugging Face's `Trainer` API. 
 It supports configurable learning rate, number of epochs, batch size, asnd padding strategy (dynamic or fixed). 

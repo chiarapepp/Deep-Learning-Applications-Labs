@@ -106,11 +106,11 @@ In this exercise, I explored the _Rotten Tomatoes_ dataset and the pre-trained D
     - A **Linear SVM classifier** trained on these features provides a simple but stable baseline for sentiment classification.
     - Metrics (accuracy, precision, recall, F1) give an initial reference point before fine-tuning the transformer.
     - SVM Results: 
-    
-    | Split      | Accuracy | Precision | Recall | F1 Score |
-    | ---------- | -------- | --------- | ------ | -------- |
-    | Validation | 0.8180   | 0.8317    | 0.7974 | 0.8142   |
-    | Test       | 0.7946   | 0.8054    | 0.7767 | 0.7908   |
+        
+        | Split      | Accuracy | Precision | Recall | F1 Score |
+        | ---------- | -------- | --------- | ------ | -------- |
+        | Validation | 0.8180   | 0.8317    | 0.7974 | 0.8142   |
+        | Test       | 0.7946   | 0.8054    | 0.7767 | 0.7908   |
 
 
 ### Exercise 2: Tokenization, Model Setup, and Fine-tuning
@@ -164,19 +164,19 @@ I evaluated both padding strategies for fine-tuning DistilBERT on the Rotten Tom
 
 For the fine-tuning of DistilBERT with LoRA (rank=8, alpha=32), the difference is even more pronounced:
 
-| Setup   dynamic_fixed_padding                   | Train Runtime | Samples/sec | Steps/sec |
+| Setup                      | Train Runtime | Samples/sec | Steps/sec |
 | -------------------------- | ------------- | ----------- | --------- |
 | Dynamic Padding            | 58.8s         | 726         | 45.4      |
 | Fixed Padding (512 tokens) | 709.2s        | 60          | 3.8       |
 
 **Observation**: Dynamic padding is roughly ~7-12× faster than fixed padding on the same hardware.
 
-**Figures:**
+**Figures:** 
+
 | DistilBERT comparison padding fixed vs dynamics. | DistilBERT+ Lora comparison padding fixed vs dynamics |
 |---------------|----------------|
 | ![fixed](images/d_p_lora.png) | ![dynamic](images/dynamic_fixed_padding.png) |
-
-
+| In blue dynamic padding, in orange fixed padding.| 
 
 These results confirm that dynamic padding provides a substantial speed advantage without compromising accuracy, making it the preferred strategy on modern GPUs.
 
@@ -186,14 +186,33 @@ It supports configurable learning rate, number of epochs, batch size, and paddin
 
 The experiments were conducted using a **batch size** of **16** and **5 epochs**, as transformer models like DistilBERT typically converge quickly on downstream tasks such as sentiment classification, with most performance gains occurring within the first few epochs.
 
-The experiments included a comparison of two different learning rates to evaluate their effect on training stability and model performance.
+The study focused on comparing two different learning rates (`2e-4` and `2e-5`) to assess their impact on training stability and overall model performance.
+
+| Padding | Learning Rate       | Train Loss | Eval Loss | Test Loss | Eval Accuracy | Test Accuracy | Eval F1 | Test F1 | Eval Precision | Test Precision | Eval Recall | Test Recall |
+| --- | ------------------- | ---------- | --------- | --------- | ------------- | ------------- | ------- | ------- | -------------- | -------------- | ----------- | ----------- |
+| `max_length` | 2e-4                | 0.2273     | 0.4234    | 0.4234    | 0.8002        | 0.8002        | 0.7802  | 0.7802  | 0.8670         | 0.8670         | 0.7092      | 0.7092      |
+| `max_length`   | 2e-5                | 0.1921     | 0.4077    | 0.4077    | 0.8424        | 0.8424        | 0.8439  | 0.8439  | 0.8361         | 0.8361         | 0.8518      | 0.8518      |
+| False   | 2e-4 (forse 0.2e-4) | 0.2170     | 1.0442    | 1.0442    | 0.8049        | 0.8049        | 0.8023  | 0.8023  | 0.8131         | 0.8131         | 0.7917      | 0.7917      |
+| False  | 2e-5                | 0.1930     | 0.4135    | 0.4135    | 0.8537        | 0.8537        | 0.8564  | 0.8564  | 0.8409         | 0.8409         | 0.8724      | 0.8724      |
+
 
 **Key observations:**
 - With a learning rate of `2e-5`, the model achieved a lower training loss (~0.19), indicating stable and accurate learning.
 - With a learning rate of `2e-4`, the loss remained higher (~0.22), suggesting that a too high learning rate causes oscillations and reduces the model's generalization capability.
 - No significant differences were observe between dynamic padding and fixed padding to 512 tokens, performance remained comparable, but fixed padding led to longer runtimes (more tokens processed on average).
+- Best overall performance: Achieved with learning rate 2e-5, regardless of padding, delivering the highest F1, recall, and balanced precision.
+- High learning rate runs: Suffer from reduced recall and slightly higher loss, confirming that lower learning rates are better for stable convergence on small datasets.
+- Implication for downstream tasks: Fine-tuning with a lower learning rate and dynamic padding is recommended for optimal balance of speed and performance.
+
+**Figures:** 
 
 ![DistilBERT Finetuning, Train Loss over steps, comparison between lr = 2e-4 e 2e-5](images/distil_lr.png)
+
+|Train Loss over Steps: Learning Rate Comparison| Padding Strategy Comparison|
+|---------------|----------------|
+| ![fixed](images/distil_lr.png)| ![dynamic](images/padding_comp_distil.png) |
+
+There is almost no difference in using either padding strategies except on the runtime.
 
 
 ### Exercise 3: Efficient Fine-tuning with LoR

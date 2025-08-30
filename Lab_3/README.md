@@ -38,7 +38,7 @@ pip install torch transformers datasets scikit-learn numpy tqdm wandb peft
 ```bash
 wandb login
 ```
-## Running Experiments
+### Running Experiments
 
 All experiments are managed through a single script `main.py.` The `--step` argument selects the exercise to run.
 

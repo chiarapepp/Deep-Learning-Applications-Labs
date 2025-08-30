@@ -110,9 +110,32 @@ When using the MLP model (as opposed to ResMLP), there are two main ways to defi
 - Standard architecture with `--width` and `--depth`: This configuration enables a direct comparison with ResMLP, ensuring that both models have a comparable number of layers and units.
 
 ### Results
+The first set of experiments involved applying MLP and ResMLP architectures to the MNIST dataset. I tested models with different depths (`10`, `20`, `40`) and widths (`32`, `64`, `128`), considering both the presence or absence of normalization and the use of a learning rate scheduler. This allowed me to evaluate the effect of residual connections and architectural configurations on training stability and performance.
+
+#### MLP vs ResMLP on MNIST 
 
 
+**Key observations**: 
+1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy (see figure on the left below).
 
+Even with normalization (n1), some attempt to converge but remain very low (e.g., mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
+
+→ Direct confirmation of the ResNet thesis: deeper ≠ better accuracy; in fact, clear degradation without skip connections.
+
+2. **Residual connections save depth**: All resMLPs at depth=40 converge very well, for example `resmlp_w64_d40_n1_sched1` = 98.35% test acc vs `mlp_w64_d40_n1_sched1` = 88.7% (see figure on the right below).
+
+→ Residuals keep training stable even in very deep architectures, unlike plain MLPs.
+
+| All MLPs at `depth=40`, different parameters | ResMLP vs MLP (`depth=40`, `scheduler`,`normalization`) |
+|---------------|----------------|
+| ![mlp_40](images/mlp_d40.png) | ![res_mlp_40](images/mlp_resmlp_40.png) |
+
+
+3. **Effect of width (w=32 → 64 → 128)**
+At equal depth and with residual, increasing width gives small gains:
+
+
+4. **Normalization (n1) is always useful**
 
 To better understand why residual connections improve training, we analyzed the gradient flow in deep models.
 We computed the gradient norms of each layer for a single minibatch (Fig. X).
@@ -141,11 +164,25 @@ In addition to the common arguments listed above, the CNN-specific arguments are
 - `--layers`: Layer pattern (e.g., 2 2 2 2 for ResNet-18).
 - `--use_residual`: Enable residual (skip) connections.
 
+
+
+#### CNN vs ResNet on CIFAR10
+
+
+### Results 
+The second set of experiments focused on CNNs applied to the CIFAR-10 dataset. I experimented with ResNet-style models of varying depths (ResNet-18, ResNet-34, and a deeper ResNet-50-like network), with and without residual connections, and with or without a learning rate scheduler. These experiments helped me understand how architectural depth and skip connections affect model performance.
+
+
+
 ## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100
 
 
 
 #### Fine-tuning Experiments
+
+Path to the pre-trained model on CIFAR-10
+In my case I used the models CNN ResNet-18 style, trained with data augmentation, skip connections and learning rate scheduler.
+
 ```bash
 # Linear evaluation (freeze all layers)
 python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "layer1,layer2,layer3,layer4" --optimizer SGD --lr 1e-3 --epochs 75
@@ -161,19 +198,16 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 
 
 
+## Results
+The final set of experiments was dedicated to fine-tuning pre-trained CNNs. I first conducted linear evaluation by freezing all layers to assess the quality of the learned representations. Then, I progressively unfreezed deeper layers for partial fine-tuning and left only the first layer frozen for almost full fine-tuning. These experiments allowed me to study the impact of different fine-tuning strategies on adaptation to the target dataset.
 
 
 
-
-## 🔬 Key Experiments and Expected Results
-
-### Exercise 1: Verifying ResNet Claims
 
 1. **Depth vs Performance**: Deeper networks without residual connections may perform worse
 2. **Residual Benefits**: Networks with residual connections should train more effectively
 3. **Gradient Flow**: Gradient analysis shows better flow in residual networks
 
-### Exercise 2: Transfer Learning
 
 1. **Feature Quality**: SVM baseline on extracted features
 2. **Fine-tuning Strategies**: Comparison of different unfreezing strategies
@@ -190,21 +224,6 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 
 
 
- 
-## Visualizations & Logging
-
-If `--use_wandb` is enabled, training metrics and model summaries are logged to:
-
-🔗 [W&B Project – DLA_Lab_1](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_1?nw=nwuserchiarapeppicelli)
-
-You can view:
-
-- TO ADD
-
----
-
-## 🧪 Results Summary
-
 Key findings include:
 
 - Residual connections significantly improve training stability and final accuracy, especially for deeper networks.
@@ -216,21 +235,6 @@ Key findings include:
 
 More material that supports those findings can be found inside the `wandb` project. 
 
-### 📈 Gradient Flow on Network Layers
-
-#### MLP vs ResMLP on MNIST
-
-<p align="center">
-  <img src="images/gradient_norm_mlp.png" alt="MLP_norm" width="45%" style="margin-right:10px;"/>
-  <img src="images/gradient_norm_resmlp.png" alt="ResMLP_norm" width="45%"/>
-</p>
-
-#### CNN vs ResNet on CIFAR10
-
-<p align="center">
-  <img src="images/cnn_noskip_gradient_norm.png" alt="CNN_norm" width="45%" style="margin-right:10px;"/>
-  <img src="images/cnn_skip_gradient_norm.png" alt="ResNet_norm" width="45%"/>
-</p>
 
 
 

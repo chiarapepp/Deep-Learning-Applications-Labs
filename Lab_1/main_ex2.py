@@ -13,7 +13,7 @@ from train_eval import train, evaluate_model
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Laboratory 1 : Fine-tuning a pre-trained CNN on a new classification task " \
+        description="Laboratory 1 : Fine-tuning of a pre-trained CNN on a new classification task " \
         "with optional linear evaluation."
     )
 

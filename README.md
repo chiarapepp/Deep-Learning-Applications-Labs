@@ -46,7 +46,7 @@ The implementation and methodology are primarily inspired by the [HuggingFace Tr
 🔗 [Lab_3 Results](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_3?nw=nwuserchiarapeppicelli)  
 
 ---
-## ⚙️ Setup Instructions
+## Setup Instructions
 
 To get started, clone the repository and install the required Python packages.
 
@@ -65,5 +65,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```bash
 pip install -r requirements.txt
 ```
-Each lab may contain additional setup notes or specific dependencies, which are documented in the corresponding subfolder’s `README.md`.
+Each lab includes a short recap of the specific setup instructions or additional dependencies needed, documented in the corresponding subfolder’s `README.md`. This way, you can reproduce a single lab independently without having to go through the setup of the others.
+
 

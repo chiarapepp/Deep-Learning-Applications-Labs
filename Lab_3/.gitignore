@@ -1,0 +1,6 @@
+*.pyc
+__pycache__/
+runs/
+wandb/
+.cache_lab3/
+test_run/

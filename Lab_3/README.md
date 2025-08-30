@@ -171,9 +171,11 @@ For the fine-tuning of DistilBERT with LoRA (rank=8, alpha=32), the difference i
 **Observation**: Dynamic padding is roughly ~7-12× faster than fixed padding on the same hardware.
 
 **Figures:**
+| DistilBERT comparison padding fixed vs dynamics. | DistilBERT+ Lora comparison padding fixed vs dynamics |
+|---------------|----------------|
+| ![fixed](images/d_p_lora.png) | ![dynamic](images/dynamic_fixed_padding.png) |
 
-![DistilBERT comparison padding fixed vs dynamics.](images/d_p_lora.png)
-![DistilBERT+ Lora comparison padding fixed vs dynamics](images/dynamic_fixed_padding.png)
+
 
 These results confirm that dynamic padding provides a substantial speed advantage without compromising accuracy, making it the preferred strategy on modern GPUs.
 
@@ -190,7 +192,7 @@ The experiments included a comparison of two different learning rates to evaluat
 - With a learning rate of `2e-4`, the loss remained higher (~0.22), suggesting that a too high learning rate causes oscillations and reduces the model's generalization capability.
 - No significant differences were observe between dynamic padding and fixed padding to 512 tokens, performance remained comparable, but fixed padding led to longer runtimes (more tokens processed on average).
 
-![DistilBERT Finetuning, Train Loss over steps, comparison between lr = 2e-4 e 2e-5](images/dynamic_fixed_padding.png)
+![DistilBERT Finetuning, Train Loss over steps, comparison between lr = 2e-4 e 2e-5](images/distil_lr.png)
 
 
 ### Exercise 3: Efficient Fine-tuning with LoR

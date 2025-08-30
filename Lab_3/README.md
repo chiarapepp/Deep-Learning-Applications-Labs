@@ -89,7 +89,7 @@ chmod +x run_experiments.sh
 ### Exercise 1: Dataset and Model Exploration
 In this exercise, I explored the _Rotten Tomatoes_ dataset and the pre-trained DistilBERT model (see `exercise1.py`). 
 
-Key observations:
+**Key observations:**
 1. **Dataset structure and splits**:
     - The dataset contains **5,331** positive and **5,331** negative sentences (balanced across splits).
     - Standard splits (train (8530 samples), validation (1066), test (1066)) were available.
@@ -115,7 +115,7 @@ Key observations:
 ### Exercise 2: Tokenization, Model Setup, and Fine-tuning
 This exercise prepared the Rotten Tomatoes dataset for fine-tuning a DistilBERT model for binary sentiment classification (see `exercise2.py` script).
 
-**Dataset Tokenization**:
+#### **Dataset Tokenization**:
 The `tokenize_dataset` function returns a HuggingFace `DatasetDict` with tokenized splits (train, validation, test). Each split contains the **original text** and **label** plus: 
     - `input_ids` → numerical token IDs. 
     - `attention_mask` → indicating which tokens are real and which are padding.
@@ -127,8 +127,6 @@ The HuggingFace tokenizer supports multiple padding strategies, controlled by th
 
 - `False` (default): No padding is applied during tokenization. Sequences retain their natural lengths (after truncation to `max_length` if specified). During training, `DataCollatorWithPadding` dynamically pads each batch to the length of the longest sequence in that batch.
 
-This is particularly good because of 
-- Efficiency: Less wasted computation and memory because short sequences aren’t padded up to a global maximum.
 - Trade-offs: Batch shapes vary at runtime. This is generally fine (and typical) on CPU/GPU training.
 
 Advantages:
@@ -149,59 +147,60 @@ Trade-offs:
     - Increased computation and memory usage, as shorter sequences are padded up to the global maximum.
     - Slower training compared to dynamic padding, especially for smaller batches or shorter sequences.
 
-
-
-- adding="max_length" (when use_fixed_padding=True) : Always pad each example to max_length=512 tokens (and also truncate any longer example to 512). 
-
-I decided to do for every one of my experiments both padding option and what I found was that 
-dynamic paddis is \sim 7.5x more fast a parità of the other parameters. 
-
-
-Dynamic vs Fixed Padding Runtime Comparison (DistilBERT, batch=16, epochs=5, lr=2e-5):
-
-| Setup                      | Train Runtime | Samples/sec | Steps/sec |
-| -------------------------- | ------------- | ----------- | --------- |
-| Dynamic Padding            | 103.6s        | 412         | 25.8      |
-| Fixed Padding (512 tokens) | 781.5s        | 54.6        | 3.4       |
-
-Dynamic vs Fixed Padding with LoRA (rank=8, alpha=32):
-| Setup                      | Train Runtime | Samples/sec | Steps/sec |
-| -------------------------- | ------------- | ----------- | --------- |
-| Dynamic Padding            | 58.8s         | 726         | 45.4      |
-| Fixed Padding (512 tokens) | 709.2s        | 60          | 3.8       |
-
-Dynamic padding rimane ~12x più veloce.
-
-![DistilBERT comparison padding fixed vs dynamics](images/d_p_lora.png.png)
-![DistilBERT+ Lora comparison padding fixed vs dynamics](images/dynamic_fixed_padding.png.png)
 Speed & memory: Dynamic batch padding is typically faster and lighter.
 
 Shape uniformity: Fixed padding yields constant shapes at the cost of extra compute/memory.
 
 Caching: Padding done at tokenization time is baked into the saved dataset; dynamic padding is applied on the fly per training batch.
 
+#### Runtime Comparison: Dynamic vs Fixed Padding
+I evaluated both padding strategies for fine-tuning DistilBERT on the Rotten Tomatoes dataset (batch size = 16, epochs = 5, learning rate = 2e-5) on an NVIDIA GeForce RTX 4060 Ti, the results show a substantial speed advantage for dynamic padding:
+
+| Setup                      | Train Runtime | Samples/sec | Steps/sec |
+| -------------------------- | ------------- | ----------- | --------- |
+| Dynamic Padding            | 103.6s        | 412         | 25.8      |
+| Fixed Padding (512 tokens) | 781.5s        | 54.6        | 3.4       |
+
+For the fine-tuning of DistilBERT with LoRA (rank=8, alpha=32), the difference is even more pronounced:
+
+| Setup                      | Train Runtime | Samples/sec | Steps/sec |
+| -------------------------- | ------------- | ----------- | --------- |
+| Dynamic Padding            | 58.8s         | 726         | 45.4      |
+| Fixed Padding (512 tokens) | 709.2s        | 60          | 3.8       |
+
+**Observation**: Dynamic padding is roughly ~7-12× faster than fixed padding on the same hardware.
+
+**Figures:**
+
+![DistilBERT comparison padding fixed vs dynamics.](images/d_p_lora.png)
+![DistilBERT+ Lora comparison padding fixed vs dynamics](images/dynamic_fixed_padding.png)
+
+These results confirm that dynamic padding provides a substantial speed advantage without compromising accuracy, making it the preferred strategy on modern GPUs.
 
 ### Fine-tuning Distilbert
-For the fine tuning of the DistilBERT model for binary sequence classification I used Hugging Face's `Trainer` API. 
-It supports configurable learning rate, number of epochs, batch size, asnd padding strategy (dynamic or fixed). 
-I decided to do the experiments with 5 epoch, since BERT models (Transformer models) usually convergono veloce nelle prime epoche. La batch size è stata messa a 16 standard.
-Infine ho svolto un confronto tra diversi learning rate.
+For fine-tuning the DistilBERT model for binary sequence classification, I used Hugging Face's `Trainer` API. 
+It supports configurable learning rate, number of epochs, batch size, and padding strategy (dynamic or fixed). 
 
-- With a learning rate of 2e-5, the model achieved a lower training loss (~0.19), indicating stable and accurate learning.
-- With a learning rate of 2e-4, the loss remained higher (~0.22), suggesting that a too high learning rate causes oscillations and reduces the model's generalization capability.
-- No significant differences were observed between dynamic padding and fixed padding to 512 tokens: performance remained comparable, but fixed padding led to longer runtimes (more tokens processed on average).
+The experiments were conducted using a **batch size** of **16** and **5 epochs**, as transformer models like DistilBERT typically converge quickly on downstream tasks such as sentiment classification, with most performance gains occurring within the first few epochs.
+
+The experiments included a comparison of two different learning rates to evaluate their effect on training stability and model performance.
+
+**Key observations:**
+- With a learning rate of `2e-5`, the model achieved a lower training loss (~0.19), indicating stable and accurate learning.
+- With a learning rate of `2e-4`, the loss remained higher (~0.22), suggesting that a too high learning rate causes oscillations and reduces the model's generalization capability.
+- No significant differences were observe between dynamic padding and fixed padding to 512 tokens, performance remained comparable, but fixed padding led to longer runtimes (more tokens processed on average).
+
+![DistilBERT Finetuning, Train Loss over steps, comparison between lr = 2e-4 e 2e-5](images/dynamic_fixed_padding.png)
 
 
 ### Exercise 3: Efficient Fine-tuning with LoR
-Per quanto riguarda l'esercizio 3, ho deciso di utilizzare LoRa e ho deciso di utilizzare come parametri Lora rank e alpha loro e loro. 
-Poi ho deciso di rendere possibile scegleire quali moduli applicare LoRa , e ho fatto vari esperimenti, il variare del padding, il variare dei parametri, i valori del learning rate e i moduli scelti. 
+LoRA was applied with configurable rank, alpha, and target modules. Experiments varied padding, learning rate, and module selection (see `exercise3.py`).
 
-Le osservazioni sono : 
-verall, LoRA models achieved competitive results compared to full fine-tuning while reducing computational costs.
-- With a learning rate of 2e-5, ranks 8/α=32 and 16/α=64, the training loss stayed low (~0.22–0.25) and test metrics were good.
-- With a learning rate of 2e-4, performance degraded: the loss remained higher and test/validation metrics dropped, as also observed in full fine-tuning.
-- Extending target modules (q_lin, k_lin, v_lin, out_lin, lin1, lin2) did not provide substantial advantages over only tuning attention layers. This suggests that localized adaptation on attention blocks is sufficient to capture the necessary task information.
-
+**Key observations:**
+- LoRA achieved competitive results compared to full fine-tuning with lower computational cost.
+- With a learning rate of `2e-5`, rank=8/α=32 and rank=16/α=64, the training loss stayed low (~0.22–0.25) and test metrics were good.
+- With a learning rate of `2e-4`, performance degraded: the loss remained higher and test/validation metrics dropped, as also observed in full fine-tuning.
+- Extending target modules (`q_lin, k_lin, v_lin, out_lin, lin1, lin2`) did not provide substantial advantages over only tuning attention layers. This suggests that localized adaptation on attention blocks is sufficient to capture the necessary task information.
 
 ### Results Comparison
 
@@ -212,18 +211,16 @@ verall, LoRA models achieved competitive results compared to full fine-tuning wh
 | LoRA Fine-tuning | ~0.3M (adapters) | 5-10 minutes | ~87% | ~84% |
 
 
-
 ### Summary of Trends
-- A learning rate of 2e-5 is optimal for both full fine-tuning and LoRA.
-- Using fixed padding increases runtime without improving performance.
+- Learning rate 2e-5 is optimal for both full fine-tuning and LoRA.
+- Fixed padding increases runtime without improving performance.
 - LoRA maintains comparable performance to full fine-tuning while reducing computational cost, confirming its effectiveness for efficient Transformer adaptation.
-
 
 ## Resources
 
 - [HuggingFace Transformers Documentation](https://huggingface.co/docs/transformers/)
-- [](https://huggingface.co/tasks/feature-extraction)
-- [](https://huggingface.co/docs/transformers/main/en/main_classes/trainer)
+- [Feature Extraction Task](https://huggingface.co/tasks/feature-extraction)
+- [Trainer API](https://huggingface.co/docs/transformers/main/en/main_classes/trainer)
 - [PEFT Library Guide](https://huggingface.co/docs/peft/)
 - [LoRA Paper](https://arxiv.org/abs/2106.09685)
 - [DistilBERT Paper](https://arxiv.org/abs/1910.01108)

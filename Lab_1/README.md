@@ -124,7 +124,7 @@ Even with normalization (n1), some attempt to converge but remain very low (e.g.
 
 | All MLPs at `depth=40`, different parameters | ResMLP vs MLP (`depth=40`, `scheduler`,`normalization`) |
 |--------------------------------------------|--------------------------------------------------------|
-| <img src="images/mlp_d40.png" height="300"> | <img src="images/mlp_resmlp_40.png" height="300"> |
+| <img src="images/mlp_d40.png" height="350"> | <img src="images/mlp_resmlp_40.png" height="350"> |
 
 3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from `97.77%` (`resmlp_w32_d10_n1_sched1`) to `98.59%` (`resmlp_w128_d10_n1_sched1`).
 
@@ -136,7 +136,7 @@ Residual + norm always pushes to the top (>98.5%).
 
 | Comparison of MLP models with and without normalization (depth=20, scheduler, various width)|
 |--------------------------------------------|
-| <img src="images/norm.png" height="400"> | 
+| <img src="images/norm.png" height="350"> | 
 
 To better understand why residual connections improve training, I also analyzed the gradient flow in deep models.
 I computed the gradient norms of each layer for a single minibatch.

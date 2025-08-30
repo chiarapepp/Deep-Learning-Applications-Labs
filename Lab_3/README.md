@@ -121,8 +121,8 @@ The `tokenize_dataset` function returns a HuggingFace `DatasetDict` with tokeniz
     - `attention_mask` → indicating which tokens are real and which are padding.
 
 Tokenization uses a `tokenize_function` that processes batches of examples and applies the pretrained tokenizer (`AutoTokenizer.from_pretrained('distilbert/distilbert-base-uncased')`) with truncation enabled to limit sequences to a maximum length, and *optional padding*.
-----------------------------------------------------------------------
-**Padding options**:
+
+#### **Padding options**:
 The HuggingFace tokenizer supports multiple padding strategies, controlled by the `padding` argument (`bool`, `str` or `PaddingStrategy`, default `False`):
 
 - `False` (default): No padding is applied during tokenization. Sequences retain their natural lengths (after truncation to `max_length` if specified). During training, `DataCollatorWithPadding` dynamically pads each batch to the length of the longest sequence in that batch.

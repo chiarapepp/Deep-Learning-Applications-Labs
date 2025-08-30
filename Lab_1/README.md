@@ -30,9 +30,9 @@ Lab_1/
 
 ### Implemented Models
 1. **MLP (Multilayer Perceptron)**
-- Configurable depth and width.
-- Optional batch normalization.
-- Standard feedforward architecture.
+  - Configurable depth and width.
+  - Optional batch normalization.
+  - Standard feedforward architecture.
 2. **ResMLP (Residual MLP)**
   - MLP with residual connections between blocks.
   - Each block contains two linear layers with skip connections.
@@ -114,7 +114,6 @@ The first set of experiments involved applying MLP and ResMLP architectures to t
 
 #### MLP vs ResMLP on MNIST 
 
-
 **Key observations**: 
 1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy (see figure on the left below).
 Even with normalization (n1), some attempt to converge but remain very low (e.g., mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
@@ -137,7 +136,7 @@ Residual + norm always pushes to the top (>98.5%).
 
 | Comparison of MLP models with and without normalization (depth=20, scheduler, various width)|
 |--------------------------------------------|
-| ![norm](images/norm.png)  | 
+| <img src="images/norm.png" height="400"> | 
 
 To better understand why residual connections improve training, I also analyzed the gradient flow in deep models.
 I computed the gradient norms of each layer for a single minibatch.

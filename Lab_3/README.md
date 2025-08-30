@@ -20,6 +20,7 @@ Lab_3/
 ├── exercise3.py               # Parameter-efficient fine-tuning with LoRA
 ├── utils.py                   # Configuration and utility functions
 ├── run_experiments.sh         # Comprehensive experiment runner script
+├── check_parameters.sh        # Script to compute trainable and total parameters for the main models.
 └── README.md                  # This file
 ```
 
@@ -105,12 +106,12 @@ In this exercise, I explored the _Rotten Tomatoes_ dataset and the pre-trained D
     - `CLS` token embeddings were extracted from the training and validation sets.
     - A **Linear SVM classifier** trained on these features provides a simple but stable baseline for sentiment classification.
     - Metrics (accuracy, precision, recall, F1) give an initial reference point before fine-tuning the transformer.
-    - SVM Results: 
-        
-        | Split      | Accuracy | Precision | Recall | F1 Score |
-        | ---------- | -------- | --------- | ------ | -------- |
-        | Validation | 0.8180   | 0.8317    | 0.7974 | 0.8142   |
-        | Test       | 0.7946   | 0.8054    | 0.7767 | 0.7908   |
+
+**SVM Results:**      
+| Split      | Accuracy | Precision | Recall | F1 Score |
+| ---------- | -------- | --------- | ------ | -------- |
+| **Validation** | 0.8180   | 0.8317    | 0.7974 | 0.8142   |
+| **Test**       | 0.7946   | 0.8054    | 0.7767 | 0.7908   |
 
 
 ### Exercise 2: Tokenization, Model Setup, and Fine-tuning
@@ -126,35 +127,11 @@ Tokenization uses a `tokenize_function` that processes batches of examples and a
 #### **Padding options**:
 The HuggingFace tokenizer supports multiple padding strategies, controlled by the `padding` argument (`bool`, `str` or `PaddingStrategy`, default `False`):
 
-- `False` (default): No padding is applied during tokenization. Sequences retain their natural lengths (after truncation to `max_length` if specified). During training, `DataCollatorWithPadding` dynamically pads each batch to the length of the longest sequence in that batch.
+- `False` (default): No padding is applied during tokenization. Sequences keep their natural lengths (after truncation to `max_length` if specified) and padding is applied dynamically at training time by `DataCollatorWithPadding`, which pads each batch to the length of the longest sequence it contains. This approach is more efficient because short sequences are not unnecessarily padded to a global maximum, leading to less wasted computation and memory. On modern GPUs such as the NVIDIA GeForce RTX 4060 Ti, the overhead of handling variable shapes is negligible. The main drawback is that batch shapes vary at runtime, which may slightly complicate logging, debugging, or exporting models to formats that require fixed-size inputs.
 
-- Trade-offs: Batch shapes vary at runtime. This is generally fine (and typical) on CPU/GPU training.
+- `max_length` (fixed padding, enabled when `use_fixed_padding=True`) : Every example is padded to the fixed `max_length` (`512` tokens for DistilBERT) and truncated if longer.This produces uniform batch shapes, which can simplify debugging, visualization, and exporting to ONNX or TorchScript. It can also be useful on older hardware or frameworks that require fixed-size tensors. However, this strategy is computationally heavier, since all sequences—no matter how short—are extended to the maximum length. As a result, training is slower and requires more memory compared to dynamic padding.
 
-Advantages:
-    - Efficiency: Reduces wasted computation and memory because short sequences are not padded to a global maximum length.
-    - Flexibility: Handles variable-length sequences naturally.
-
-Trade-offs:
-    - Batch shapes vary at runtime, which can slightly complicate logging or debugging.
-    - Minimal overhead on modern GPU training, such as on an NVIDIA GeForce RTX 4060 Ti, which can easily handle dynamic shapes.
-
-- `max_length` (fixed padding, enabled when `use_fixed_padding=True`) : Every example is padded to the fixed `max_length` (`512` tokens for DistilBERT) and truncated if longer.
-
-Advantages:
-    - Uniform batch shapes simplify debugging and model export (e.g., ONNX or TorchScript).
-    - Some frameworks or older GPUs may require fixed-size tensors.
-
-Trade-offs:
-    - Increased computation and memory usage, as shorter sequences are padded up to the global maximum.
-    - Slower training compared to dynamic padding, especially for smaller batches or shorter sequences.
-
-Speed & memory: Dynamic batch padding is typically faster and lighter.
-
-Shape uniformity: Fixed padding yields constant shapes at the cost of extra compute/memory.
-
-Caching: Padding done at tokenization time is baked into the saved dataset; dynamic padding is applied on the fly per training batch.
-
-#### Runtime Comparison: Dynamic vs Fixed Padding
+**Runtime Comparison: Dynamic vs Fixed Padding**
 I evaluated both padding strategies for fine-tuning DistilBERT on the Rotten Tomatoes dataset (batch size = 16, epochs = 5, learning rate = 2e-5) on an NVIDIA GeForce RTX 4060 Ti, the results show a substantial speed advantage for dynamic padding:
 
 | Setup                      | Train Runtime | Samples/sec | Steps/sec |
@@ -188,55 +165,79 @@ The experiments were conducted using a **batch size** of **16** and **5 epochs**
 
 The study focused on comparing two different learning rates (`2e-4` and `2e-5`) to assess their impact on training stability and overall model performance.
 
-| Padding | Learning Rate       | Train Loss | Eval Loss | Test Loss | Eval Accuracy | Test Accuracy | Eval F1 | Test F1 | Eval Precision | Test Precision | Eval Recall | Test Recall |
-| --- | ------------------- | ---------- | --------- | --------- | ------------- | ------------- | ------- | ------- | -------------- | -------------- | ----------- | ----------- |
-| `max_length` | 2e-4                | 0.2273     | 0.4234    | 0.4234    | 0.8002        | 0.8002        | 0.7802  | 0.7802  | 0.8670         | 0.8670         | 0.7092      | 0.7092      |
-| `max_length`   | 2e-5                | 0.1921     | 0.4077    | 0.4077    | 0.8424        | 0.8424        | 0.8439  | 0.8439  | 0.8361         | 0.8361         | 0.8518      | 0.8518      |
-| False   | 2e-4 (forse 0.2e-4) | 0.2170     | 1.0442    | 1.0442    | 0.8049        | 0.8049        | 0.8023  | 0.8023  | 0.8131         | 0.8131         | 0.7917      | 0.7917      |
-| False  | 2e-5                | 0.1930     | 0.4135    | 0.4135    | 0.8537        | 0.8537        | 0.8564  | 0.8564  | 0.8409         | 0.8409         | 0.8724      | 0.8724      |
-
+| Padding      | Learning Rate | Test Accuracy | Test F1 | Test Precision | Test Recall |
+| ------------ | ------------- | ------------- | ------- | -------------- | ----------- |
+| `max_length` | 2e-4          | 0.8002        | 0.7802  | 0.8670         | 0.7092      |
+| `max_length` | 2e-5          | 0.8424        | 0.8439  | 0.8361         | 0.8518      |
+| False        | 2e-4          | 0.8049        | 0.8023  | 0.8131         | 0.7917      |
+| False        | 2e-5          | **0.8537**        | **0.8564**  | **0.8409**         | **0.8724**      |
 
 **Key observations:**
-- With a learning rate of `2e-5`, the model achieved a lower training loss (~0.19), indicating stable and accurate learning.
-- With a learning rate of `2e-4`, the loss remained higher (~0.22), suggesting that a too high learning rate causes oscillations and reduces the model's generalization capability.
-- No significant differences were observe between dynamic padding and fixed padding to 512 tokens, performance remained comparable, but fixed padding led to longer runtimes (more tokens processed on average).
-- Best overall performance: Achieved with learning rate 2e-5, regardless of padding, delivering the highest F1, recall, and balanced precision.
-- High learning rate runs: Suffer from reduced recall and slightly higher loss, confirming that lower learning rates are better for stable convergence on small datasets.
-- Implication for downstream tasks: Fine-tuning with a lower learning rate and dynamic padding is recommended for optimal balance of speed and performance.
+
+- Using a learning rate of (`2e-5`) resulted in a lower training loss (~0.19), indicating stable and effective learning while a higher learning rate (`2e-4`) produced a higher training loss (~0.22), suggesting that excessive learning rates can cause oscillations and reduce the model’s generalization (see figure below).
+- The best overall performance was achieved with `2e-5`, regardless of padding, delivering the highest F1 score, recall, and balanced precision.
+- High learning rate runs suffer from reduced recall and slightly higher loss, confirming that lower learning rates are better for stable convergence on small datasets.
 
 **Figures:** 
-
-![DistilBERT Finetuning, Train Loss over steps, comparison between lr = 2e-4 e 2e-5](images/distil_lr.png)
-
 |Train Loss over Steps: Learning Rate Comparison| Padding Strategy Comparison|
 |---------------|----------------|
 | ![fixed](images/distil_lr.png)| ![dynamic](images/padding_comp_distil.png) |
+| In blue `lr=2e-4`, in red `lr=2e-5`       | Same fine-tuning parameters except different padding|                               
 
 There is almost no difference in using either padding strategies except on the runtime.
 
-
-### Exercise 3: Efficient Fine-tuning with LoR
+### Exercise 3: Efficient Fine-tuning with LoRA
 LoRA was applied with configurable rank, alpha, and target modules. Experiments varied padding, learning rate, and module selection (see `exercise3.py`).
 
+| Learning Rate | Module Target | LoRA (r, a) | Test Accuracy | Test F1 | Test Precision | Test Recall | 
+| ------------- | ------------- | ----------- | ------------- | ------- | -------------- | ----------- | 
+| 2e-4          | Attention           | (16, 64)    | 0.8349        | 0.8391  | 0.8182         | 0.8612      | 
+| 2e-4          | Attention           | (8, 32)     | 0.8321        | 0.8353  | 0.8195         | 0.8518      |
+| 2e-5          | Attention          | (16, 64)    | 0.8368        | 0.8395  | 0.8258         | 0.8537      |
+| 2e-5          | Attention          | (8, 32)     | 0.8302        | 0.8316  | 0.8247         | 0.8386      | 
+| 2e-4          | Attention + FFN     | (16, 64)    | 0.8377        | 0.8385  | 0.8346         | 0.8424      | 
+| 2e-4          | Attention + FFN     | (8, 32)     | **0.8443**        | **0.8460**  | **0.8367**         | **0.8555**      | 
+| 2e-5          | Attention + FFN     | (16, 64)    | 0.8311        | 0.8311  | 0.8311         | 0.8311      | 
+| 2e-5          | Attention + FFN      | (8, 32)     | 0.8265        | 0.8260  | 0.8283         | 0.8236      |
+
+-> `Attention + FFN = q_lin k_lin v_lin out_lin lin1 lin2`
+-> `Attention = q_lin k_lin v_lin out_lin` 
+
+
 **Key observations:**
-- LoRA achieved competitive results compared to full fine-tuning with lower computational cost.
-- With a learning rate of `2e-5`, rank=8/α=32 and rank=16/α=64, the training loss stayed low (~0.22–0.25) and test metrics were good.
-- With a learning rate of `2e-4`, performance degraded: the loss remained higher and test/validation metrics dropped, as also observed in full fine-tuning.
-- Extending target modules (`q_lin, k_lin, v_lin, out_lin, lin1, lin2`) did not provide substantial advantages over only tuning attention layers. This suggests that localized adaptation on attention blocks is sufficient to capture the necessary task information.
-
-### Results Comparison
-
-| Method | Parameters Trained | Training Time | Validation Acc | Test Acc |
-|--------|-------------------|---------------|----------------|----------|
-| SVM Baseline | ~1M (SVM only) | 2-5 minutes | ~82% | ~79% |
-| Full Fine-tuning | ~67M (all) | 15-30 minutes | ~88% | ~85% |
-| LoRA Fine-tuning | ~0.3M (adapters) | 5-10 minutes | ~87% | ~84% |
+- LoRA achieves strong performance while training only a small fraction of the parameters.
+- For Attention-only modules, increasing the learning rate to `2e-4` slightly improves accuracy and F1, though the gains are modest compared to `2e-5`.
+- Expanding the target modules to Attention + FFN (`q_lin, k_lin, v_lin, out_lin, lin1, lin2`) shows little improvements especially when combined with `lr=2e-4`. The best results are obtained with `lr=2e-4`, Attention + FFN, `r=8/α=32`, reaching Test `Accuracy 0.8443` and `F1 0.8460`.
+- Lower learning rates (`2e-5`) lead to marginally lower metrics.
+- Higher LoRA rank/alpha (`16,64`) does not consistently outperform smaller rank/alpha (`8,32`). The optimal configuration balances module target, learning rate, and rank rather than relying solely on parameter count.
 
 
-### Summary of Trends
-- Learning rate 2e-5 is optimal for both full fine-tuning and LoRA.
-- Fixed padding increases runtime without improving performance.
-- LoRA maintains comparable performance to full fine-tuning while reducing computational cost, confirming its effectiveness for efficient Transformer adaptation.
+|Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`)| Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`)|
+| (`rank=8`, `alpha=32`, Attention+FFN) | (`rank=16`, `alpha=64`, Attention+FFN)| 
+|---------------|----------------|
+| ![comparison_lr](images/r8_a32_tm_lr.png)| ![dynamic](images/r16_a64_tm_lr.png) |
+                              
+|Training loss for LoRA DistilBERT. Different lines = different r/α and lr settings.|
+|----------------|
+|![alt text](<images/W&B Chart 30_08_2025, 16_35_14.png>)|
+
+All training was done with a `batch_size=16` and `epochs=5`.
+
+## Conclusions
+
+| Approach                                     | Trainable Params\* | Test Accuracy | Test F1 | Test Precision | Test Recall |
+| -------------------------------------------- | ---------------- | ------------- | ------- | -------------- | ----------- |
+| Baseline SVM                                 | 1.538k           | 0.7946        | 0.7908  | 0.8054         | 0.7767      |
+| Full Fine-tuning DistilBERT                  | 66.955M          | 0.8537        | 0.8564  | 0.8409         | 0.8724      |
+| LoRA DistilBERT (r=8, α=32, Attention + FFN) | 1.255M           | 0.8443        | 0.8460  | 0.8367         | 0.8555      |
+
+(\* see )
+**Key Observations**:
+- The SVM is extremely lightweight (~1.5k parameters) and provides a stable baseline.
+- Full fine-tuning of DistilBERT uses all ~66M parameters, achieving the best performance across all metrics.
+- LoRA adapts only ~1.25M parameters (~2% of the total), achieving performance very close to full fine-tuning.
+
+This confirms the advantage of LoRA in terms of computational and memory efficiency without major compromises in accuracy, F1, or other test metrics.
 
 ## Resources
 

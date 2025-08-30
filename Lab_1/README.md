@@ -137,7 +137,7 @@ Residual + norm always pushes to the top (>98.5%).
 
 | Comparison of MLP models with and without normalization (depth=20, scheduler, various width)|
 |--------------------------------------------|
-| [!norm](images/d_p_lora.png)  | 
+| [!norm](images/norm.png)  | 
 
 To better understand why residual connections improve training, I also analyzed the gradient flow in deep models.
 I computed the gradient norms of each layer for a single minibatch.

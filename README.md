@@ -1,8 +1,8 @@
 # Deep Learning Applications Laboratory Assignments
 
-This repository contains the implementation of three laboratory assignments developed for as part of the exam for a **Deep Learning Applications** course.
+This repository contains the implementation of three laboratory assignments developed as part of the exam for the **Deep Learning Applications** course, MSc in Artificial Intelligence at the University of Florence.
 
-Each lab is organized in a dedicated folder and includes all the code required to reproduce the experiments and results. Inside each folder, a `README.md` file provides details specific for each experiments, visualizations, and explanations of the design choices made, along with references and sources of inspiration.
+Each lab is organized in a dedicated folder and includes all the code required to reproduce the experiments and results. Inside each folder, a `README.md` file provides details specific for each experiment, visualizations, and explanations of the design choices made, along with references and sources.
 
 To complement the code and documentation, full training logs and results are available through public Weights & Biases (W&B) project pages.
 
@@ -16,8 +16,7 @@ This lab explores the impact of residual connections on deep network training, r
 
 > [**Deep Residual Learning for Image Recognition**](https://arxiv.org/abs/1512.03385) – Kaiming He et al., CVPR 2016
 
-Additionally, the lab includes a fine tuning experiment with different layer freezing strategies and a SVM baselinge comparison using extracted features.
-
+Additionally, the lab includes a fine-tuning experiment with different layer freezing strategies and an SVM baseline comparison using extracted features.
 
 🔗 [Lab_1 Results](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_1?nw=nwuserchiarapeppicelli)
 
@@ -29,7 +28,7 @@ This lab features a comprehensive implementation of the **REINFORCE algorithm**,
 
 > [**Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning**](https://link.springer.com/article/10.1007/BF00992696#citeas) – Williams, 1992
 
-It is applied to two environments from [Gymnasium](https://gymnasium.farama.org/):
+It is applied to two environments from *Gymnasium*:
 
 - [CartPole-v1](https://gymnasium.farama.org/environments/classic_control/cart_pole/)
 - [LunarLander-v3](https://gymnasium.farama.org/environments/box2d/lunar_lander/)
@@ -40,9 +39,9 @@ It is applied to two environments from [Gymnasium](https://gymnasium.farama.org/
 
 ### Laboratory 3 - Working with Transformers in the HuggingFace Ecosystem
 
-Comprehensive exploration of transformer fine-tuning using the HuggingFace ecosystem, implementing both full fine-tuning and LoRA (Low-Rank Adaptation) approaches.
+This lab provides a comprehensive exploration of transformer fine-tuning within the HuggingFace ecosystem. It investigates both **full fine-tuning** and **LoRA (Low-Rank Adaptation)** approaches, highlighting their differences in terms of efficiency and performance.
 
-Based on [HuggingFace Transformers Documentation](https://huggingface.co/docs/transformers/)
+The implementation and methodology are primarily inspired by the [HuggingFace Transformers Documentation](https://huggingface.co/docs/transformers/).
 
 🔗 [Lab_3 Results](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_3?nw=nwuserchiarapeppicelli)  
 

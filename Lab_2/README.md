@@ -1,4 +1,4 @@
-# Laboratory 3 — Deep Reinforcement Learning : REINFORCE on CartPole & LunarLander
+# Laboratory 2 — Deep Reinforcement Learning : REINFORCE on CartPole & LunarLander
 
 This lab implements the REINFORCE algorithm to train an agent in the **CartPole-v1** and **LunarLander-v3** environments using PyTorch. 
 The project supports various enhancements including value baselines, entropy regularization, gradient clipping, and temperature scheduling.

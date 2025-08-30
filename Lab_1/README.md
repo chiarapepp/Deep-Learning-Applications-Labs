@@ -137,17 +137,18 @@ Residual + norm always pushes to the top (>98.5%).
 
 | Comparison of MLP models with and without normalization (depth=20, scheduler, various width)|
 |--------------------------------------------|
-| [!norm](images/norm.png)  | 
+| ![norm](images/norm.png)  | 
 
 To better understand why residual connections improve training, I also analyzed the gradient flow in deep models.
 I computed the gradient norms of each layer for a single minibatch.
 In the plain 40-layer MLP, the gradient magnitudes vanish in the earliest layers, making training unstable and preventing learning.
 In contrast, the residual MLP of the same depth shows stable gradient norms across layers, confirming that skip connections alleviate vanishing gradients and allow effective training of deep networks.
 
-(stessi parametri depth=40, width =64 no scheduler, no normalization
+I ran MLP and ResMLP on MNIST with `depth=40` and `width=64` (no scheduler, no normalization). The table below shows the gradient norms:
+
 | Gradient norm, model MLP | Gradient norm, model ResMLP| 
 |--------------------------------------------|------------------------------------|
-| [!mlp_grad](images/grad_mlp.png)  | [!resmlp_grad](images/grad_res.png)  | 
+| ![mlp_grad](images/grad_mlp.png)  | ![resmlp_grad](images/grad_res.png)  | 
 | test accuracy 11.35% | test accuracy 96.65% | 
 
 

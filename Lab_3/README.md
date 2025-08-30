@@ -211,10 +211,8 @@ LoRA was applied with configurable rank, alpha, and target modules. Experiments 
 - Lower learning rates (`2e-5`) lead to marginally lower metrics.
 - Higher LoRA rank/alpha (`16,64`) does not consistently outperform smaller rank/alpha (`8,32`). The optimal configuration balances module target, learning rate, and rank rather than relying solely on parameter count.
 
-
-|Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`)| Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`)|
-|---------------|----------------|
-| (`rank=8`, `alpha=32`, Attention+FFN) | (`rank=16`, `alpha=64`, Attention+FFN)| 
+**Figures:**
+|Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`) (`rank=8`, `alpha=32`, Attention+FFN) | Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`)(`rank=16`, `alpha=64`, Attention+FFN)|
 |---------------|----------------|
 | ![comparison_lr](images/r8_a32_tm_lr.png)| ![dynamic](images/r16_a64_tm_lr.png) |
 

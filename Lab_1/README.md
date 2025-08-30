@@ -127,8 +127,9 @@ Even with normalization (n1), some attempt to converge but remain very low (e.g.
 → Residuals keep training stable even in very deep architectures, unlike plain MLPs.
 
 | All MLPs at `depth=40`, different parameters | ResMLP vs MLP (`depth=40`, `scheduler`,`normalization`) |
-|---------------|----------------|
-| ![mlp_40](images/mlp_d40.png) | ![res_mlp_40](images/mlp_resmlp_40.png) |
+|--------------------------------------------|--------------------------------------------------------|
+| <img src="images/mlp_d40.png" height="200"> | <img src="images/mlp_resmlp_40.png" height="200"> |
+
 
 
 3. **Effect of width (w=32 → 64 → 128)**

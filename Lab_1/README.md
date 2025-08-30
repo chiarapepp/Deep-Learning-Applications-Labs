@@ -117,31 +117,39 @@ The first set of experiments involved applying MLP and ResMLP architectures to t
 
 **Key observations**: 
 1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy (see figure on the left below).
-
 Even with normalization (n1), some attempt to converge but remain very low (e.g., mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
-
 → Direct confirmation of the ResNet thesis: deeper ≠ better accuracy; in fact, clear degradation without skip connections.
 
 2. **Residual connections save depth**: All resMLPs at depth=40 converge very well, for example `resmlp_w64_d40_n1_sched1` = 98.35% test acc vs `mlp_w64_d40_n1_sched1` = 88.7% (see figure on the right below).
-
 → Residuals keep training stable even in very deep architectures, unlike plain MLPs.
 
 | All MLPs at `depth=40`, different parameters | ResMLP vs MLP (`depth=40`, `scheduler`,`normalization`) |
 |--------------------------------------------|--------------------------------------------------------|
-| <img src="images/mlp_d40.png" height="200"> | <img src="images/mlp_resmlp_40.png" height="200"> |
+| <img src="images/mlp_d40.png" height="300"> | <img src="images/mlp_resmlp_40.png" height="300"> |
 
+3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from `97.77%` (`resmlp_w32_d10_n1_sched1`) to `98.59%` (`resmlp_w128_d10_n1_sched1`).
 
+4. **Normalization (n1) is always useful**: For examples
+- Without norm (`mlp_w32_d20_n0_sched1`) = `95.69%` accuracy.
+- With norm (`mlp_w32_d20_n1_sched1`) = `97.41%` accuracy.
+Residual + norm always pushes to the top (>98.5%).
+→ Normalization mitigates instability, but alone is not enough for very deep nets (without residual they still collapse).
 
-3. **Effect of width (w=32 → 64 → 128)**
-At equal depth and with residual, increasing width gives small gains:
+| Comparison of MLP models with and without normalization (depth=20, scheduler, various width)|
+|--------------------------------------------|
+| [!norm](images/d_p_lora.png)  | 
 
-
-4. **Normalization (n1) is always useful**
-
-To better understand why residual connections improve training, we analyzed the gradient flow in deep models.
-We computed the gradient norms of each layer for a single minibatch (Fig. X).
+To better understand why residual connections improve training, I also analyzed the gradient flow in deep models.
+I computed the gradient norms of each layer for a single minibatch.
 In the plain 40-layer MLP, the gradient magnitudes vanish in the earliest layers, making training unstable and preventing learning.
 In contrast, the residual MLP of the same depth shows stable gradient norms across layers, confirming that skip connections alleviate vanishing gradients and allow effective training of deep networks.
+
+(stessi parametri depth=40, width =64 no scheduler, no normalization
+| Gradient norm, model MLP | Gradient norm, model ResMLP| 
+|--------------------------------------------|------------------------------------|
+| [!mlp_grad](images/grad_mlp.png)  | [!resmlp_grad](images/grad_res.png)  | 
+| test accuracy 11.35% | test accuracy 96.65% | 
+
 
 ## CNN 
 The CNN model is implemented using the BasicBlock definition from torchvision in [torchvision](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L59).

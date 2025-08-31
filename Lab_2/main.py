@@ -1,10 +1,12 @@
 import argparse
+from email import parser
+import os
 import wandb
 import gymnasium as gym
 import torch
 from reinforce import reinforce
 from networks import PolicyNetwork, ValueNetwork
-from utils import save_checkpoint, load_checkpoint, run_episode, make_gif
+from utils import save_checkpoint, load_checkpoint, run_episode
 
 
 def parse_args():
@@ -16,7 +18,6 @@ def parse_args():
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor for future rewards")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
     parser.add_argument("--episodes", type=int, default=1000, help="Number of training episodes")
-    parser.add_argument("--visualize", action="store_true", help="Visualize final agent")
     parser.add_argument("--num_layers", type=int, default=1, help="Number of hidden layers in the policy and value networks")
     parser.add_argument("--hidden_dim", type=int, default=128, help="Width of the layers in the policy and value networks")
     parser.add_argument("--eval_interval", type=int, default=50, help="Evaluate the policy every --eval-interval iterations")
@@ -28,7 +29,11 @@ def parse_args():
     parser.add_argument("--t_schedule", choices=["linear", "exponential"], help="Choose between a linear or exponential temperature scheduler")
     parser.add_argument("--entropy_coeff", type=float, default=0.01, help="Coefficient for entropy regularization")
     parser.add_argument("--env", default="cartpole", choices=["cartpole", "lunarlander"], help="Choose between the Cartpole and the LunarLander environment")
-    parser.set_defaults(visualize=False)
+
+    parser.add_argument("--visualize", action="store_true", help="Visualize final agent")
+    parser.add_argument("--make_gif", action="store_true", help="Create GIF of trained agent")
+    parser.set_defaults(visualize=False, make_gif=False)
+    
     args = parser.parse_args()
     return args
 
@@ -96,14 +101,22 @@ if __name__ == "__main__":
     )
 
     if args.visualize:
+        # Load the best checkpoint
+        best_checkpoint_path = os.path.join(wandb.run.dir, "checkpoint-best_eval_policy.pt")
+        
+        if os.path.exists(best_checkpoint_path):
+            policy = load_checkpoint(best_checkpoint_path, policy)
+            print("Loaded best policy checkpoint")
+        else:
+            print("No checkpoint found, using final trained policy")
+
         if args.env == "cartpole":
             env_render = gym.make("CartPole-v1", render_mode="human")
         elif args.env == "lunarlander":
             env_render = gym.make("LunarLander-v3", render_mode="human")
-        for _ in range(10):
-            run_episode(env_render, policy)
 
-        # Close the visualization environment.
+        for _ in range(10):
+            run_episode(env_render, policy, deterministic=args.det, temperature=args.T)
         env_render.close()
 
     # Close the Cartpole environment and finish the wandb run.

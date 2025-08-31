@@ -67,12 +67,15 @@ Parameters:
     gamma (float): Discount factor.
 
 """
-def compute_returns(rewards, gamma):
-    # Calculate discounted rewards in reverse order, then flip the array.
-    discounted_rewards = np.array([gamma**(i + 1) * r for i, r in enumerate(rewards)][::-1])
-    total_returns = np.cumsum(discounted_rewards)
 
-    return np.flip(total_returns, axis=0).copy()
+def compute_returns(rewards, gamma):
+    returns = np.zeros_like(rewards, dtype=np.float32)
+    running_return = 0
+    for t in reversed(range(len(rewards))):
+        running_return = rewards[t] + gamma * running_return
+        returns[t] = running_return
+    return returns
+
 
 
 """
@@ -106,7 +109,7 @@ def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=Fals
     (obs, info) = env.reset()
     for i in range(max_steps):
         # Get the current observation, run the policy and select an action.
-        obs = torch.tensor(obs)
+        obs = torch.tensor(obs, dtype=torch.float32)
         (action, log_prob, entropy) = select_action(
             env, obs, policy, temperature, deterministic
         )
@@ -177,42 +180,3 @@ def evaluate_policy(
     std_length = np.std(lengths)
     policy.train()
     return avg_reward, avg_length, std_reward, std_length
-
-
-
-def make_gif(env, policy, checkpoint, gif_path, temperature=1.0, deterministic=False, episodes=1, maxlen=500):
-
-    frames = []
-    policy = load_checkpoint(policy, checkpoint)
-
-    for _ in range(episodes):
-        obs, _ = env.reset()
-        done = False
-        step = 0
-        while not done and step < maxlen:
-            obs_t = torch.tensor(obs, dtype=torch.float32)
-            with torch.no_grad():
-                action_probs = policy(obs_t)
-
-                if deterministic:
-                    action = torch.argmax(action_probs).item()
-                else:
-                    action = (torch.distributions.Categorical(action_probs / temperature)
-                    .sample()
-                    .item()
-                    )
-
-            frame = env.render()
-            if frame is not None:
-                frames.append(frame)
-            obs, _, terminated, truncated, _ = env.step(action)
-            done = bool(terminated or truncated)
-            step += 1
-
-    env.close()
-
-    if frames:
-        imageio.mimsave(gif_path, frames, fps=30)
-        print(f"Saved GIF to {gif_path}")
-    else:
-        print("No frames captured; check render_mode and compatibility.")

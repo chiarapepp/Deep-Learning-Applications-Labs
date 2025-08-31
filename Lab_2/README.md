@@ -13,12 +13,13 @@ Main objectives:
 ### Project Structure
 
 ```
-├── main.py           # Entry point for training
-├── reinforce.py      # Core REINFORCE training loop
-├── networks.py       # Policy and value network definitions
-├── utils.py          # Utility functions for training and evaluation
-├── images/           # Folder containing figures/plots/results
-└── README.md         # This file
+├── main.py           # Entry point for training.
+├── reinforce.py      # Core REINFORCE training loop.
+├── networks.py       # Networks definitions (Policy and value).
+├── utils.py          # Utility functions for training and evaluation.
+├── visualize.py      # Script to render a gif of a trained agent.
+├── images/           # Folder containing figures/plots/results.
+└── README.md         # This file.
 ```
 
 ### Requirements
@@ -200,13 +201,8 @@ Observations:
 - I managed to achieve a peak average evaluation reward of approx `277` (violet curve) by training an agent with REINFORCE for `7000` episodes, using gradient clipping, advantage normalization, exponential temperature scheduling (with a starting temperature of `2`), entropy regularization and a deeper and wider network with respect to our baseline (`width = 256` instead of `128`, `depth = 2` instead of `1`)
 - For more complex tasks like LunarLander, REINFORCE exhibits higher variance and greater sensitivity to hyperparameters. Achieving good performance is possible but not guaranteed, often requiring careful tuning and potentially many trials. The results highlight the challenges of applying vanilla REINFORCE to harder problems without more advanced techniques for variance reduction or exploration. 
 
-## 📚 References
+## References
 
 - [Williams, R. J. (1992). Simple statistical gradient-following algorithms for connectionist reinforcement learning.](https://link.springer.com/article/10.1007/BF00992696) Machine learning, 8(3-4), 229-256
 - [Greensmith, E., Bartlett, P. L., & Baxter, J. (2004). Variance reduction techniques for gradient estimates in reinforcement learning.](https://www.jmlr.org/papers/volume5/greensmith04a/greensmith04a.pdf) Journal of Machine Learning Research, 5(Nov), 1471-1530
-
----
-
-## 🧑‍💻 Author
-
-Jay Senoner — [@jaysenoner99](https://github.com/jaysenoner99)
+- [compute_returns](https://www.geeksforgeeks.org/machine-learning/reinforce-algorithm/)

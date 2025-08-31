@@ -188,15 +188,15 @@ All models surpass **75–78%** accuracy. For examples `cnn_skip1_L3-4-6-3_sched
 
 -> For CNNs as well, residual connections stabilize training and enable deeper networks.
 
-| Model                     | Test Accuracy | Train Loss Curve |
-|---------------------------|---------------|------------------|
-| cnn_skip0_L2-2-2-2_sched1 | 0.7658        |                  |
-| cnn_skip0_L3-4-6-3_sched1 | 0.7069        | <img src="images/ski.png" width="600"> |
-| cnn_skip0_L5-6-8-5_sched1 | *0.2747*      |                  |
-| cnn_skip1_L2-2-2-2_sched1 | 0.7795        |                  |
-| cnn_skip1_L3-4-6-3_sched1 | **0.7788**    |                  |
-| cnn_skip1_L5-6-8-5_sched1 | 0.7780        |                  |
-
+| Model                     | Test Accuracy |
+|---------------------------|---------------|
+| cnn_skip0_L2-2-2-2_sched1 | 0.7658        |                  
+| cnn_skip0_L3-4-6-3_sched1 | 0.7069        | 
+| cnn_skip0_L5-6-8-5_sched1 | *0.2747*      |                  
+| cnn_skip1_L2-2-2-2_sched1 | 0.7795        |                  
+| cnn_skip1_L3-4-6-3_sched1 | **0.7788**    |                  
+| cnn_skip1_L5-6-8-5_sched1 | 0.7780        |                  
+| Train Loss Curve | <img src="images/ski.png" width="600"> |
 
 
 2. **Effect of data augmentation (augm vs non-augm)**: I had good results, but I decided to introduce some data augmentations on the CIFAR10 dataset (all experiments without `augm` were run without augmentations). In particular I applied **random cropping** (`transforms.RandomCrop(32, padding=4)`) and **random horizontal flipping** (`transforms.RandomHorizontalFlip`). I found that these augmentations significantly improved the accuracy!

@@ -14,7 +14,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="A script implementing REINFORCE on the Cartpole and LunarLander environments."
     )
-    parser.add_argument("--baseline", type=str, default="none", help="Baseline to use (none, std)")
+    parser.add_argument("--baseline", type=str, default="none", help="Baseline to use (none, std, value)")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor for future rewards")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
     parser.add_argument("--episodes", type=int, default=1000, help="Number of training episodes")
@@ -32,6 +32,9 @@ def parse_args():
 
     parser.add_argument("--visualize", action="store_true", help="Visualize final agent")
     parser.add_argument("--make_gif", action="store_true", help="Create GIF of trained agent")
+    parser.add_argument("--gif_dir", type=str, default="./gifs", help="Directory where to save the GIF")    
+
+    parser.add_argument("--run_name", type=str, default=None, help="Wandb run name. If None, a name will be automatically generated")
     parser.set_defaults(visualize=False, make_gif=False)
     
     args = parser.parse_args()
@@ -45,6 +48,11 @@ if __name__ == "__main__":
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+    if args.run_name is None:
+        run_name = f"REINFORCE_{args.env}_baseline={args.baseline}_T={args.T}_t_schedule={args.t_schedule}_gamma={args.gamma}_lr={args.lr}"
+    else:
+        run_name = args.run_name
 
     run = wandb.init(
         project="DLA_Lab_2",
@@ -65,7 +73,7 @@ if __name__ == "__main__":
             "t_schedule": args.t_schedule,
             "entropy_coeff": args.entropy_coeff,
         },
-        name=f"REINFORCE_{args.env}_baseline={args.baseline}_{args.det}_T={args.T}_t_schedule={args.t_schedule}_gamma={args.gamma}_lr={args.lr}",
+        name=run_name,
     )
 
     # Instantiate the environment (no visualization)

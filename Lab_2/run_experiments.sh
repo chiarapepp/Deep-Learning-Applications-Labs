@@ -4,109 +4,137 @@
 # Deep Learning Applications - Laboratory 2
 # ========================================================================================
 
-# Configuration
-EPISODES_CARTPOLE=1000
-EPISODES_LUNARLANDER=2000
-EVAL_INTERVAL=50
-EVAL_EPISODES=20
-LR=1e-3
+# Common argument sets
+CARTPOLE_ARGS="--env cartpole --episodes 1000 --eval_interval 50 --eval_episodes 20"
+LUNARLANDER_ARGS="--env lunarlander --episodes 2000 --eval_interval 100 --eval_episodes 20"
+CARTPOLE_EXTENDED="--env cartpole --episodes 1500 --eval_interval 50 --eval_episodes 20"
+LUNARLANDER_EXTENDED="--env lunarlander --episodes 3000 --eval_interval 100 --eval_episodes 20"
 
-# =============================================================================
-echo ""
-echo "----------------------------------------"
-# ========================================================================================
-# EXERCISE 1: Basic REINFORCE Experiments
-# ========================================================================================
+'''
+# ====================================================
+# REINFORCE with No Baseline on CartPole 
+# ====================================================
+
+# Baseline REINFORCE on CartPole (no baseline)
+python main.py $CARTPOLE_ARGS --baseline none --run_name "REINFORCE_CartPole_no_baseline"
+
+# Bigger architecture
+python main.py $CARTPOLE_ARGS --baseline none --num_layers 2 --hidden_dim 256 --run_name "REINFORCE_CartPole_no_baseline_architecture_2_256"
+
+# ====================================================
+# REINFORCE with STD Baseline on CartPole 
+# ====================================================
+
+# REINFORCE with standardization baseline on CartPole
+python main.py $CARTPOLE_ARGS --baseline std --run_name "REINFORCE_CartPole_std_baseline"
+
+# Comparison with different learning rates on CartPole
+python main.py $CARTPOLE_ARGS --baseline std --lr 1e-2 --run_name "REINFORCE_CartPole_std_baseline_lr=1e-2"
+python main.py $CARTPOLE_ARGS --baseline std --lr 1e-4 --run_name "REINFORCE_CartPole_std_baseline_lr=1e-4"
+
+# Comparison with different gamma values on CartPole
+python main.py $CARTPOLE_ARGS --baseline std --gamma 0.95 --run_name "REINFORCE_CartPole_std_baseline_gamma=0.95"
+python main.py $CARTPOLE_ARGS --baseline std --gamma 0.999 --run_name "REINFORCE_CartPole_std_baseline_gamma=0.999"
+
+# Deeper architecture
+python main.py $CARTPOLE_ARGS --baseline std --num_layers 2 --hidden_dim 128 --run_name "REINFORCE_CartPole_std_baseline_architecture_2_128"
+
+# ===========================================
+# REINFORCE with Value Baseline on CartPole
+# ===========================================
+
+# REINFORCE with value baseline on CartPole
+python main.py $CARTPOLE_ARGS --baseline value --run_name "REINFORCE_CartPole_value_baseline"
+
+# Value baseline with advantage normalization
+python main.py $CARTPOLE_ARGS --baseline value --normalize --run_name "REINFORCE_CartPole_value_baseline_normalize" 
+
+# Value baseline with gradient clipping
+python main.py $CARTPOLE_ARGS --baseline value --clip_grad --run_name "REINFORCE_CartPole_value_baseline_clip_grad"
+
+# Value baseline with both stabilization techniques
+python main.py $CARTPOLE_ARGS --baseline value --normalize --clip_grad --run_name "REINFORCE_CartPole_value_baseline_normalize_clip_grad"
+
+# Comparison of different architectures 
+python main.py $CARTPOLE_ARGS --baseline value --num_layers 2 --hidden_dim 128 --run_name "REINFORCE_CartPole_value_baseline_architecture_2_128"
+python main.py $CARTPOLE_ARGS --baseline value --num_layers 2 --hidden_dim 256 --run_name "REINFORCE_CartPole_value_baseline_architecture_2_256"
+
+# Comparison with different gamma values 
+python main.py $CARTPOLE_ARGS --baseline value --gamma 0.95 --run_name "REINFORCE_CartPole_value_baseline_gamma=0.95"
+python main.py $CARTPOLE_ARGS --baseline value --gamma 0.90 --run_name "REINFORCE_CartPole_value_baseline_gamma=0.90"
+
+# Experiments with different fixed temperatures
+python main.py $CARTPOLE_ARGS --baseline value --T 0.5 --run_name "REINFORCE_CartPole_value_baseline_T=0.5"
+python main.py $CARTPOLE_ARGS --baseline value --T 2.0 --run_name "REINFORCE_CartPole_value_baseline_T=2.0"
+
+# Linear temperature scheduling
+python main.py $CARTPOLE_ARGS --baseline value --T 2.0 --t_schedule linear --run_name "REINFORCE_CartPole_value_baseline_T=2.0_t_schedule=linear"
+
+# Exponential temperature scheduling
+python main.py $CARTPOLE_ARGS --baseline value --T 2.0 --t_schedule exponential --run_name "REINFORCE_CartPole_value_baseline_T=2.0_t_schedule=exponential"
+
+# Entropy regularization experiments
+python main.py $CARTPOLE_ARGS --baseline value --entropy_coeff 0.0 --run_name "REINFORCE_CartPole_value_baseline_entropy_coeff=0.0"
+python main.py $CARTPOLE_ARGS --baseline value --entropy_coeff 0.05 --run_name "REINFORCE_CartPole_value_baseline_entropy_coeff=0.05"
+'''
+
+# ========================================
+# Deterministic evaluation on CartPole
+# ========================================
+
+# Once the main experiments are done I decided to try out some deterministic evaluations.
+
+# No baseline
+python main.py $CARTPOLE_ARGS --baseline none --det --run_name "REINFORCE_CartPole_no_baseline_deterministic"
+
+# Baseline std
+python main.py $CARTPOLE_ARGS --baseline std --det --run_name "REINFORCE_CartPole_std_baseline_deterministic"
+
+# Baseline value
+python main.py $CARTPOLE_ARGS --baseline value --det --run_name "REINFORCE_CartPole_value_baseline_deterministic"
 
 
-# Cartpole with different baselines
-run_experiment "Cartpole - No Baseline" \
-    "--env cartpole --baseline none --episodes $EPISODES --lr $LR"
+# ========================================
+# Lunar Lander Environment
+# ========================================
 
-run_experiment "Cartpole - Standardization Baseline" \
-    "--env cartpole --baseline std --episodes $EPISODES --lr $LR"
+# Base REINFORCE on LunarLander
+python main.py $LUNARLANDER_ARGS --baseline none --run_name "REINFORCE_LunarLander_no_baseline"
 
-# =============================================================================
-echo "EXERCISE 2: Value Baseline Experiments"
-echo "----------------------------------------"
+# REINFORCE with standardization baseline on LunarLander
+python main.py $LUNARLANDER_ARGS --baseline std --run_name "REINFORCE_LunarLander_std_baseline"
 
-run_experiment "Cartpole - Value Baseline" \
-    "--env cartpole --baseline value --episodes $EPISODES --lr $LR"
+# REINFORCE with value baseline on LunarLander
+python main.py $LUNARLANDER_ARGS --baseline value --run_name "REINFORCE_LunarLander_value_baseline"
 
-run_experiment "Cartpole - Value Baseline + Normalization" \
-    "--env cartpole --baseline value --normalize --episodes $EPISODES --lr $LR"
+# LunarLander with all stabilization techniques
+python main.py $LUNARLANDER_ARGS --baseline value --normalize --clip_grad --run_name "REINFORCE_LunarLander_value_baseline_normalize_clip_grad"
 
-# =============================================================================
-echo "EXERCISE 3: LunarLander Experiments"
-echo "------------------------------------"
+# LunarLander with smaller learning rate
+python main.py $LUNARLANDER_ARGS --baseline value --lr 5e-4 --normalize --clip_grad --run_name "REINFORCE_LunarLander_value_baseline_lr=5e-4_normalize_clip_grad"
 
-run_experiment "LunarLander - No Baseline" \
-    "--env lunarlander --baseline none --episodes 2000 --lr $LR"
+# 9.3 Gamma sensitivity for LunarLander
+python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.90 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.9"
+python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.95 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.95"
+python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.999 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.999"
 
-run_experiment "LunarLander - Value Baseline" \
-    "--env lunarlander --baseline value --normalize --episodes 2000 --lr $LR"
+# ========================================
+# DETERMINISTIC EVALUATION EXPERIMENTS
+# ========================================
 
-# =============================================================================
-echo "Hyperparameter Studies"
-echo "-------------------------"
 
-# Learning rate study
-for lr in 1e-4 1e-3 1e-2; do
-    run_experiment "Cartpole - LR Study (lr=$lr)" \
-        "--env cartpole --baseline value --lr $lr --episodes $EPISODES"
-done
+# 5.2 Deterministic evaluation on LunarLander
+python main.py $LUNARLANDER_ARGS --baseline value --det --run_name "REINFORCE_LunarLander_value_baseline_deterministic"
 
-# Gamma study
-for gamma in 0.95 0.99 0.995; do
-    run_experiment "Cartpole - Gamma Study (gamma=$gamma)" \
-        "--env cartpole --baseline value --gamma $gamma --episodes $EPISODES --lr $LR"
-done
+# ========================================
+# FINAL BEST CONFIGURATIONS
+# ========================================
 
-# Network architecture study
-run_experiment "Cartpole - Deeper Network (2 layers)" \
-    "--env cartpole --baseline value --num_layers 2 --episodes $EPISODES --lr $LR"
+# 7.1 Best configuration for CartPole (final comparison)
+python main.py $CARTPOLE_EXTENDED --baseline value --normalize --clip_grad --T 1.5 --t_schedule exponential --entropy_coeff 0.01
 
-run_experiment "Cartpole - Wider Network (256 units)" \
-    "--env cartpole --baseline value --hidden_dim 256 --episodes $EPISODES --lr $LR"
+# 7.2 Best configuration for LunarLander (final comparison)
+python main.py $LUNARLANDER_EXTENDED --baseline value --normalize --clip_grad --lr 5e-4 --T 1.2 --t_schedule linear --entropy_coeff 0.02
 
-# =============================================================================
-echo "Advanced Features Study"
-echo "-------------------------"
 
-# Temperature scheduling
-run_experiment "Cartpole - Linear Temperature Schedule" \
-    "--env cartpole --baseline value --T 2.0 --t_schedule linear --episodes $EPISODES --lr $LR"
-
-run_experiment "Cartpole - Exponential Temperature Schedule" \
-    "--env cartpole --baseline value --T 2.0 --t_schedule exponential --episodes $EPISODES --lr $LR"
-
-# Gradient clipping
-run_experiment "Cartpole - With Gradient Clipping" \
-    "--env cartpole --baseline value --clip_grad --episodes $EPISODES --lr $LR"
-
-# Deterministic evaluation
-run_experiment "Cartpole - Deterministic Evaluation" \
-    "--env cartpole --baseline value --det --episodes $EPISODES --lr $LR"
-
-# =============================================================================
-echo "Ablation Studies"
-echo "------------------"
-
-# Full featured vs minimal
-run_experiment "Cartpole - Full Featured" \
-    "--env cartpole --baseline value --normalize --clip_grad --det --T 1.5 --t_schedule exponential --episodes $EPISODES --lr $LR"
-
-run_experiment "Cartpole - Minimal" \
-    "--env cartpole --baseline none --episodes $EPISODES --lr $LR"
-
-# =============================================================================
-# echo "Final Best Model Training"
-# echo "----------------------------"
-
-# Train best models for longer
-# run_experiment "Cartpole - Best Model (Long Training)" \
-   # "--env cartpole --baseline value --normalize --clip_grad --det --T 1.2 --t_schedule exponential --episodes 2000 --lr 5e-4 --visualize"
-
-# run_experiment "LunarLander - Best Model (Long Training)" \
-    #"--env lunarlander --baseline value --normalize --clip_grad --det --T 1.0 --episodes 3000 --lr 1e-3 --visualize"
 

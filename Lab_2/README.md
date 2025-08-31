@@ -206,3 +206,4 @@ Observations:
 - [Williams, R. J. (1992). Simple statistical gradient-following algorithms for connectionist reinforcement learning.](https://link.springer.com/article/10.1007/BF00992696) Machine learning, 8(3-4), 229-256
 - [Greensmith, E., Bartlett, P. L., & Baxter, J. (2004). Variance reduction techniques for gradient estimates in reinforcement learning.](https://www.jmlr.org/papers/volume5/greensmith04a/greensmith04a.pdf) Journal of Machine Learning Research, 5(Nov), 1471-1530
 - [compute_returns](https://www.geeksforgeeks.org/machine-learning/reinforce-algorithm/)
+https://gymnasium.farama.org/environments/classic_control/cart_pole/

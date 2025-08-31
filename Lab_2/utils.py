@@ -8,14 +8,13 @@ import imageio
 Utility function for model checkpointing.
 '''
 
-def save_checkpoint(epoch, model, opt, dir):
+def save_checkpoint(name, model, opt, dir):
     torch.save(
         {
-            "epoch": epoch,
             "model_state_dict": model.state_dict(),
             "opt_state_dict": opt.state_dict(),
         },
-        os.path.join(dir, f"checkpoint-{epoch}.pt"),
+        os.path.join(dir, f"checkpoint-{name}.pt"),
     )
 
 """

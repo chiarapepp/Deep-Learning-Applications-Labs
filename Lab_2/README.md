@@ -17,7 +17,7 @@ Main objectives:
 ├── reinforce.py      # Core REINFORCE training loop.
 ├── networks.py       # Networks definitions (Policy and value).
 ├── utils.py          # Utility functions for training and evaluation.
-├── visualize.py      # Script to render a gif of a trained agent.
+├── save_gif.py       # Script to render a gif of a trained agent.
 ├── images/           # Folder containing figures/plots/results.
 └── README.md         # This file.
 ```

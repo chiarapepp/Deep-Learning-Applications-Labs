@@ -1,33 +1,23 @@
 #!/bin/bash
 
-# run_experiments.sh - Comprehensive experiment runner for DLA Lab 2
-# Make executable with: chmod +x run_experiments.sh
-
-set -e  # Exit on any error
-
-echo "Starting DLA Lab 2 Experiments"
-echo "=================================="
+# ========================================================================================
+# Deep Learning Applications - Laboratory 2
+# ========================================================================================
 
 # Configuration
-EPISODES=1000
+EPISODES_CARTPOLE=1000
+EPISODES_LUNARLANDER=2000
 EVAL_INTERVAL=50
 EVAL_EPISODES=20
 LR=1e-3
 
-# Function to run a single experiment
-run_experiment() {
-    local name="$1"
-    local args="$2"
-    echo "Running experiment: $name"
-    echo "Args: $args"
-    python main.py $args
-    echo "Completed: $name"
-    echo ""
-}
-
 # =============================================================================
-echo "EXERCISE 1: Basic REINFORCE Experiments"
+echo ""
 echo "----------------------------------------"
+# ========================================================================================
+# EXERCISE 1: Basic REINFORCE Experiments
+# ========================================================================================
+
 
 # Cartpole with different baselines
 run_experiment "Cartpole - No Baseline" \

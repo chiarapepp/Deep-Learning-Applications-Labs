@@ -54,30 +54,30 @@ def reinforce(
 
     if baseline not in ["none", "std", "value"]:
         raise ValueError(f"Unknown baseline {baseline}")
-    if baseline == "value":
-        assert value_network is not None, "You must provide a value_network for baseline='value'"
+    if baseline == 'value':
+        if value_network is None:
+            raise ValueError("Value baseline selected, but value_network is None")
+        value_network.train()
+        value_opt = torch.optim.Adam(value_network.parameters(), lr=lr)
 
     opt = torch.optim.Adam(policy.parameters(), lr=lr)
-    value_opt = (
-        torch.optim.Adam(value_network.parameters(), lr=lr) if baseline == "value" else None
-    )
-
+    
     running_rewards = [0.0]
     eval_rewards = []
     eval_lengths = []
     det_rewards = []
     det_lengths = []
 
-    # Main training loop.
-    policy.train()
-    if value_network:
-        value_network.train()
     # Track best evaluation return.
     best_eval_return = float("-inf")
+
+    # Main training loop.
+    policy.train()
 
     for episode in range(num_episodes):
 
         log = {}
+
         # Compute temperature based on the selected scheduler.
         if t_schedule is not None:
             if t_schedule == "linear":
@@ -114,8 +114,8 @@ def reinforce(
             base_returns = returns - values.detach()
 
             # Value loss (MSE between predicted value and return).
-            value_loss = torch.nn.functional.mse_loss(values, returns)
             value_opt.zero_grad()
+            value_loss = torch.nn.functional.mse_loss(values, returns)
             value_loss.backward()
             if clip_gradients:
                 torch.nn.utils.clip_grad_norm_(value_network.parameters(), max_norm=1.0)
@@ -170,7 +170,7 @@ def reinforce(
                     f"[DET-EVAL] Episode {episode} — Avg Reward: {avg_det_reward:.2f}, Avg Length: {avg_det_length:.2f}"
                 )
 
-            # Save checkpoint based on best stochastic evaluation reward
+            # # Save checkpoint if current evaluation outperforms all previous evaluations
             if avg_reward > best_eval_return:
                 best_eval_return = avg_reward
                 save_checkpoint("best_eval_policy", policy, opt, wandb.run.dir)

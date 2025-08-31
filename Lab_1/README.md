@@ -114,7 +114,7 @@ The first set of experiments involved applying MLP and ResMLP architectures to t
 
 #### MLP vs ResMLP on MNIST 
 
-**Key observations**: 
+**Key observations:** 
 1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy (see figure on the left below).
 Even with normalization (n1), some attempt to converge but remain very low (e.g., mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
 → Direct confirmation of the ResNet thesis: deeper ≠ better accuracy; in fact, clear degradation without skip connections.
@@ -124,7 +124,7 @@ Even with normalization (n1), some attempt to converge but remain very low (e.g.
 
 | All MLPs at `depth=40`, different parameters | ResMLP vs MLP (`depth=40`, `scheduler`,`normalization`) |
 |--------------------------------------------|--------------------------------------------------------|
-| <img src="images/mlp_d40.png" height="350"> | <img src="images/mlp_resmlp_40.png" height="350"> |
+| <img src="images/mlp_d40.png" height="300"> | <img src="images/mlp_resmlp_40.png" height="300"> |
 
 3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from `97.77%` (`resmlp_w32_d10_n1_sched1`) to `98.59%` (`resmlp_w128_d10_n1_sched1`).
 
@@ -174,23 +174,39 @@ In addition to the common arguments listed above, the CNN-specific arguments are
 - `--use_residual`: Enable residual (skip) connections.
 
 
-
-#### CNN vs ResNet on CIFAR10
-
-
 ### Results 
 The second set of experiments focused on CNNs applied to the CIFAR-10 dataset. I experimented with ResNet-style models of varying depths (ResNet-18, ResNet-34, and a deeper ResNet-50-like network), with and without residual connections, and with or without a learning rate scheduler. These experiments helped me understand how architectural depth and skip connections affect model performance.
 
+#### CNN vs ResNet on CIFAR10
+
+**Key observations:**
+
+1. **With skip (residual) vs without skip**
+
+- Without skip (skip0):
+Deep models collapse: cnn_skip0_L5-6-8-5_sched0 = 41% acc, sched1 even worse = 27% acc.
+Medium architecture (L3-4-6-3) improves slightly but remains low (59–70%).
+Only the smallest one (L2-2-2-2) reaches ~74–76%.
+- With skip (skip1):
+All models surpass 75–78% accuracy.
+cnn_skip1_L3-4-6-3_sched1 = 77.9%
+cnn_skip1_L2-2-2-2_sched1 = 77.9% with top-5 >97%
+Even the deepest model (L5-6-8-5), which collapsed without skip, reaches 77.8% with skip.
+-> For CNNs as well, residual connections stabilize training and enable deeper networks.
+
+2. **Effect of data augmentation (augm vs non-augm)**
+
+The three experiments with augm_skip1_* achieve higher test accuracy (~85%):
+cnn_augm_skip1_L5-6-8-5_sched1 = 85.3%
+cnn_augm_skip1_L3-4-6-3_sched1 = 85.4%
+cnn_augm_skip1_L2-2-2-2_sched1 = 85.0%
+
+All clearly outperform models without augmentation (max ~78%).
 
 
 ## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100
 
-
-
-#### Fine-tuning Experiments
-
-Path to the pre-trained model on CIFAR-10
-In my case I used the models CNN ResNet-18 style, trained with data augmentation, skip connections and learning rate scheduler.
+For the second exercise I decided to do the finetuning on cifar100, since I had to do the fine tuning on one of the best performing models on cifar10, I used the models CNN ResNet-18 style, trained with data augmentation, skip connections and learning rate scheduler.
 
 ```bash
 # Linear evaluation (freeze all layers)
@@ -206,21 +222,8 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 - `--optimizer`: 'SGD' or 'Adam'
 
 
-
 ## Results
-The final set of experiments was dedicated to fine-tuning pre-trained CNNs. I first conducted linear evaluation by freezing all layers to assess the quality of the learned representations. Then, I progressively unfreezed deeper layers for partial fine-tuning and left only the first layer frozen for almost full fine-tuning. These experiments allowed me to study the impact of different fine-tuning strategies on adaptation to the target dataset.
-
-
-
-
-1. **Depth vs Performance**: Deeper networks without residual connections may perform worse
-2. **Residual Benefits**: Networks with residual connections should train more effectively
-3. **Gradient Flow**: Gradient analysis shows better flow in residual networks
-
-
-1. **Feature Quality**: SVM baseline on extracted features
-2. **Fine-tuning Strategies**: Comparison of different unfreezing strategies
-3. **Optimizer Impact**: SGD vs Adam for fine-tuning tasks
+For the final experiments I first conducted linear evaluation by freezing all layers to assess the quality of the learned representations. Then, I progressively unfreezed deeper layers for partial fine-tuning and left only the first layer frozen for almost full fine-tuning. These experiments allowed me to study the impact of different fine-tuning strategies on adaptation to the target dataset.
 
 
 
@@ -231,18 +234,6 @@ The final set of experiments was dedicated to fine-tuning pre-trained CNNs. I fi
 - [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385) — He et al., 201
 - [](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L204)
 
-
-
-Key findings include:
-
-- Residual connections significantly improve training stability and final accuracy, especially for deeper networks.
-- Residual connections allow the gradients to backpropagate to earlier layers of the network with a stronger signal
-- CNNs with skip connections demonstrate higher accuracy on CIFAR datasets. Moreover, CNNs with skip connections are less prone to overfitting.
-- This trend is exxagerated when the depth of the convolutional network is increased.
-- Class Activation Maps allow localization of discriminative image regions without additional supervision.
-
-
-More material that supports those findings can be found inside the `wandb` project. 
 
 
 

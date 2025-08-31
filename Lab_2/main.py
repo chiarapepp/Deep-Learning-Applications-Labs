@@ -3,8 +3,8 @@ import wandb
 import gymnasium as gym
 import torch
 from reinforce import reinforce
-from models import PolicyNetwork, ValueNetwork
-from utils import save_checkpoint, load_checkpoint, run_episode
+from networks import PolicyNetwork, ValueNetwork
+from utils import save_checkpoint, load_checkpoint, run_episode, make_gif
 
 
 def parse_args():
@@ -69,12 +69,12 @@ if __name__ == "__main__":
     elif args.env == "lunarlander":
         env = gym.make("LunarLander-v3")
 
-    # Make a policy network
     policy = PolicyNetwork(env, num_layers=args.num_layers, hidden_dim=args.hidden_dim)
     if args.baseline == "value":
         value_network = ValueNetwork(env, num_layers=args.num_layers, hidden_dim=args.hidden_dim)
     else:
         value_network = None
+
     # Train the agent.
     reinforce(
         policy,

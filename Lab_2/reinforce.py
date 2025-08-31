@@ -173,9 +173,9 @@ def reinforce(
             # Save checkpoint based on best stochastic evaluation reward
             if avg_reward > best_eval_return:
                 best_eval_return = avg_reward
-                save_checkpoint("BEST_EVAL_POLICY", policy, opt, wandb.run.dir)
+                save_checkpoint("best_eval_policy", policy, opt, wandb.run.dir)
                 if baseline == "value":
-                    save_checkpoint("BEST_EVAL_VALUE", value_network, value_opt, wandb.run.dir)
+                    save_checkpoint("best_eval_value", value_network, value_opt, wandb.run.dir)
 
         run.log(log)
 

@@ -2,6 +2,7 @@ import torch
 from torch.distributions import Categorical
 import numpy as np
 import os
+import imageio
 
 '''
 Utility function for model checkpointing.
@@ -19,6 +20,11 @@ def save_checkpoint(epoch, model, opt, dir):
 
 """
 Utility function to load a model checkpoint.
+
+fname: The name of the checkpoint file.
+model: The model to load the state_dict into.
+opt: The optimizer to load the state_dict into (optional).
+
 """
 
 def load_checkpoint(fname, model, opt=None):
@@ -89,13 +95,13 @@ Parameters:
 """
 
 def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=False):
-
+    
     observations = []
     actions = []
     log_probs = []
     rewards = []
     entropies = []
-
+    
     # Reset the environment and start the episode.
     (obs, info) = env.reset()
     for i in range(max_steps):
@@ -113,7 +119,7 @@ def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=Fals
         (obs, reward, term, trunc, info) = env.step(action)
         rewards.append(reward)
         # term : whether the episode was terminated (in the cartpole documentation this is said to happen 
-        # when the pole is no longer upright (angle > +-12 degrees or cart position > +- 2.4))
+        # when the pole is no longer upright (angle > +-12 degrees or cart position > +- 2.4)).
         # trunc : whether the episode was truncated (max_steps reached).
         if term or trunc:
             break
@@ -131,10 +137,7 @@ def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=Fals
 """
 Function that evaluates a given policy in a specified environment.
 
-Runs the policy for a given number of episodes and returns:
-1. The average total reward per episode.
-2. The average episode length.
-
+Runs the policy for a given number of episodes.
 Returns:
     avg_reward (float): Average total reward over all episodes.
     avg_length (float): Average length of episodes.
@@ -174,3 +177,42 @@ def evaluate_policy(
     std_length = np.std(lengths)
     policy.train()
     return avg_reward, avg_length, std_reward, std_length
+
+
+
+def make_gif(env, policy, checkpoint, gif_path, temperature=1.0, deterministic=False, episodes=1, maxlen=500):
+
+    frames = []
+    policy = load_checkpoint(policy, checkpoint)
+
+    for _ in range(episodes):
+        obs, _ = env.reset()
+        done = False
+        step = 0
+        while not done and step < maxlen:
+            obs_t = torch.tensor(obs, dtype=torch.float32)
+            with torch.no_grad():
+                action_probs = policy(obs_t)
+
+                if deterministic:
+                    action = torch.argmax(action_probs).item()
+                else:
+                    action = (torch.distributions.Categorical(action_probs / temperature)
+                    .sample()
+                    .item()
+                    )
+
+            frame = env.render()
+            if frame is not None:
+                frames.append(frame)
+            obs, _, terminated, truncated, _ = env.step(action)
+            done = bool(terminated or truncated)
+            step += 1
+
+    env.close()
+
+    if frames:
+        imageio.mimsave(gif_path, frames, fps=30)
+        print(f"Saved GIF to {gif_path}")
+    else:
+        print("No frames captured; check render_mode and compatibility.")

@@ -10,7 +10,6 @@ LUNARLANDER_ARGS="--env lunarlander --episodes 2000 --eval_interval 100 --eval_e
 CARTPOLE_EXTENDED="--env cartpole --episodes 1500 --eval_interval 50 --eval_episodes 20"
 LUNARLANDER_EXTENDED="--env lunarlander --episodes 3000 --eval_interval 100 --eval_episodes 20"
 
-'''
 # ====================================================
 # REINFORCE with No Baseline on CartPole 
 # ====================================================
@@ -76,7 +75,7 @@ python main.py $CARTPOLE_ARGS --baseline value --T 2.0 --t_schedule exponential 
 # Entropy regularization experiments
 python main.py $CARTPOLE_ARGS --baseline value --entropy_coeff 0.0 --run_name "REINFORCE_CartPole_value_baseline_entropy_coeff=0.0"
 python main.py $CARTPOLE_ARGS --baseline value --entropy_coeff 0.05 --run_name "REINFORCE_CartPole_value_baseline_entropy_coeff=0.05"
-'''
+
 
 # ========================================
 # Deterministic evaluation on CartPole
@@ -92,7 +91,6 @@ python main.py $CARTPOLE_ARGS --baseline std --det --run_name "REINFORCE_CartPol
 
 # Baseline value
 python main.py $CARTPOLE_ARGS --baseline value --det --run_name "REINFORCE_CartPole_value_baseline_deterministic"
-
 
 # ========================================
 # Lunar Lander Environment
@@ -113,18 +111,29 @@ python main.py $LUNARLANDER_ARGS --baseline value --normalize --clip_grad --run_
 # LunarLander with smaller learning rate
 python main.py $LUNARLANDER_ARGS --baseline value --lr 5e-4 --normalize --clip_grad --run_name "REINFORCE_LunarLander_value_baseline_lr=5e-4_normalize_clip_grad"
 
-# 9.3 Gamma sensitivity for LunarLander
+# Gamma sensitivity for LunarLander
 python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.90 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.9"
 python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.95 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.95"
 python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.999 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.999"
 
-# ========================================
-# DETERMINISTIC EVALUATION EXPERIMENTS
-# ========================================
+# ===================================================
+# Deterministic evaluation Lunar Lander
+# ===================================================
 
+# # No baseline
+python main.py $LUNARLANDER_ARGS --baseline none --det --run_name "REINFORCE_LunarLander_no_baseline_deterministic"
 
-# 5.2 Deterministic evaluation on LunarLander
+# Baseline sgd
+python main.py $LUNARLANDER_ARGS --baseline std --det --run_name "REINFORCE_LunarLander_std_baseline_deterministic"
+
+# Baseline value
 python main.py $LUNARLANDER_ARGS --baseline value --det --run_name "REINFORCE_LunarLander_value_baseline_deterministic"
+
+# ========================================
+# Lunar Lander longer
+# ========================================
+
+# # No baseline
 
 # ========================================
 # FINAL BEST CONFIGURATIONS

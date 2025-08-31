@@ -134,7 +134,7 @@ Even with normalization (n1), some attempt to converge but remain very low (e.g.
 Residual + norm always pushes to the top (>98.5%).
 → Normalization mitigates instability, but alone is not enough for very deep nets (without residual they still collapse).
 
-| Comparison of MLP models with and without normalization (depth=20, scheduler, various width)|
+| Comparison of Train Loss MLP models with and without normalization (depth=20, scheduler, various width)|
 |--------------------------------------------|
 | <img src="images/norm.png" height="350"> | 
 
@@ -170,32 +170,48 @@ In addition to the common arguments listed above, the CNN-specific arguments are
 
 #### CNN Specific
 - `--model`: Must be set to 'cnn'.
-- `--layers`: Layer pattern (e.g., 2 2 2 2 for ResNet-18).
+- `--layers`: Layer pattern (e.g. 2 2 2 2 for ResNet-18).
 - `--use_residual`: Enable residual (skip) connections.
 
-### Results 
+### Results CNN vs ResNet on CIFAR10
 The second set of experiments focused on CNNs applied to the **CIFAR-10** dataset. I experimented with ResNet-style models of varying depths (ResNet-18, ResNet-34, and a deeper ResNet-50-like network), with and without residual connections, and with or without a learning rate scheduler. These experiments helped me understand how architectural depth and skip connections affect model performance.
-
-#### CNN vs ResNet on CIFAR10
 
 **Key observations:**
 
 1. **With vs without skip connections**:
 - Without skip:
 Deep models collapse: `cnn_skip0_L5-6-8-5_sched0 = 41% acc`, sched1 even worse = 27% acc.
-Medium architecture (L3-4-6-3) improves slightly but remains low (`59–70%`).
+Medium architecture (L3-4-6-3) improves slightly but remains low (59–70%).
 Only the smallest one (L2-2-2-2) reaches ~74–76%.
 - With skip:
-All models surpass `75–78%` accuracy. For examples `cnn_skip1_L3-4-6-3_sched1 = 77.9%` and `cnn_skip1_L2-2-2-2_sched1 = 77.9%`. Even the deepest model (L5-6-8-5), which collapsed without skip, reaches **77.8%** with skip.
+All models surpass **75–78%** accuracy. For examples `cnn_skip1_L3-4-6-3_sched1 = 77.9%` and `cnn_skip1_L2-2-2-2_sched1 = 77.9%`. Even the deepest model (L5-6-8-5), which collapsed without skip, reaches **77.8%** with skip.
 
 -> For CNNs as well, residual connections stabilize training and enable deeper networks.
 
-2. **Effect of data augmentation (augm vs non-augm)**: I had good results but I decided to try some types of data augmentations on the CIFAR10 dataset (all experiments without `augm` didn't use augmentations) and I found that it greatly aumenta l'accuracy.
-The three experiments with augm_skip1_* achieve higher test accuracy (**~85%**):
+| Model                     | Test Accuracy | Comparison of train loss beetween thos models|
+|---------------------------|---------------|---------------|
+| cnn_skip0_L2-2-2-2_sched1 | 0.7658        |  |
+| cnn_skip0_L3-4-6-3_sched1 | 0.7069        | ![trainloss](images/ski.png) |
+| cnn_skip0_L5-6-8-5_sched1 | *0.2747*      | |
+| cnn_skip1_L2-2-2-2_sched1 | 0.7795        | |
+| cnn_skip1_L3-4-6-3_sched1 | **0.7788**    | |
+| cnn_skip1_L5-6-8-5_sched1 | 0.7780        ||
+
+
+2. **Effect of data augmentation (augm vs non-augm)**: I had good results, but I decided to introduce some data augmentations on the CIFAR10 dataset (all experiments without `augm` were run without augmentations). In particular I applied **random cropping** (`transforms.RandomCrop(32, padding=4)`) and **random horizontal flipping** (`transforms.RandomHorizontalFlip`). I found that these augmentations significantly improved the accuracy!
+The three experiments with augmentations and skip connection achieve the higher test accuracy (**~85%**):
 `cnn_augm_skip1_L5-6-8-5_sched1 = 85.3%`.
 `cnn_augm_skip1_L3-4-6-3_sched1 = 85.4%`.
 `cnn_augm_skip1_L2-2-2-2_sched1 = 85.0%`.
 All clearly outperform models without augmentation (max ~78%).
+
+-> Data augmentation provides a substantial boost in performance!
+
+| Comparison of train loss between models with different layers configurations and on dataset augmentation or not   | Val Loss of models..| 
+|--------------------------------------------|------------------------------------|
+| ![trainloss](images/augm_vs_no_skip_sched_1.png)  | ![val loss](Lab_1/images/augm_vs_skip_sched_1_val_loss.png)  | 
+| test accuracy 11.35% | test accuracy 96.65% | 
+
 
 
 ## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100

@@ -120,15 +120,23 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 
 4. **Stochastic and Deterministic Average Evaluation Rewards**
+
 | Stochastic evaluation | Deterministic evaluation  |
 |---------------|----------------|
 | ![stoc](images/rew.png) | ![det](images/det_rew.png) |
 
 ### Qualitative Results
 
-| Cartpole no baseline | Value scheduler   | 
-|---------------|----------------|
-| ![nobase](gif/cartpole_no_base.gif) | ![len](gif/cartpole_value_scheduler.gif) |
+<table>
+  <tr>
+    <th>Cartpole no baseline.</th>
+    <th>Value scheduler.</th>
+  </tr>
+  <tr>
+    <td><img src="gif/cartpole_no_base.gif" width="250"></td>
+    <td><img src="gif/cartpole_value_scheduler.gif" width="250"></td>
+  </tr>
+</table>
 
 ## LunarLander-v3 Experiments
 

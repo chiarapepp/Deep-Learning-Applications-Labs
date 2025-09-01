@@ -183,12 +183,8 @@ The second set of experiments focused on applying CNNs to the **CIFAR-10** datas
 **Key observations:**
 
 1. **With vs without skip connections**:
-- Without skip:
-Deep models collapse: `cnn_skip0_L5-6-8-5_sched0 = 41% acc`, sched1 even worse = 27% acc.
-Medium architecture (L3-4-6-3) improves slightly but remains low (59–70%).
-Only the smallest one (L2-2-2-2) reaches ~74–76%.
-- With skip:
-All models surpass **75–78%** accuracy. For examples `cnn_skip1_L3-4-6-3_sched1 = 77.9%` and `cnn_skip1_L2-2-2-2_sched1 = 77.9%`. Even the deepest model (L5-6-8-5), which collapsed without skip, reaches **77.8%** with skip.
+  - Without skip: Deep models collapse: `cnn_skip0_L5-6-8-5_sched0 = 41% acc`, sched1 even worse = 27% acc. Medium architecture (L3-4-6-3) improves slightly but remains low (59–70%). Only the smallest one (L2-2-2-2) reaches ~74–76%.
+  - With skip: All models surpass **75–78%** accuracy. For examples `cnn_skip1_L3-4-6-3_sched1 = 77.9%` and `cnn_skip1_L2-2-2-2_sched1 = 77.9%`. Even the deepest model (L5-6-8-5), which collapsed without skip, reaches **77.8%** with skip.
 
 -> For CNNs as well, residual connections stabilize training and enable deeper networks.
 
@@ -210,10 +206,9 @@ Table of accuracy (note all models use scheduler):
 
 2. **Effect of data augmentation (augm vs non-augm)**: I had good results, but I decided to introduce some data augmentations on the CIFAR10 dataset (all experiments without `_augm_` were run without augmentations). In particular I applied **random cropping** (`transforms.RandomCrop(32, padding=4)`) and **random horizontal flipping** (`transforms.RandomHorizontalFlip`). I found that these augmentations significantly improved the accuracy!
 The three experiments with augmentations and skip connection achieve the higher test accuracy (**~85%**):
-- `cnn_augm_skip1_L5-6-8-5_sched1 = 85.3%`.
-- `cnn_augm_skip1_L3-4-6-3_sched1 = 85.4%`.
-- `cnn_augm_skip1_L2-2-2-2_sched1 = 85.0%`.
-
+  - `cnn_augm_skip1_L5-6-8-5_sched1 = 85.3%`.
+  - `cnn_augm_skip1_L3-4-6-3_sched1 = 85.4%`.
+  - `cnn_augm_skip1_L2-2-2-2_sched1 = 85.0%`.
 All clearly outperform models without augmentation (max ~78%).
 
 -> Data augmentation provides a substantial boost in performance!

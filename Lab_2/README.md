@@ -116,7 +116,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 | |  |   |
 |---------------|----------------|---------------|
-| ![rew](images/mix.png) | ![rew](images/diff_gamma_cart.png) | ![len](images/architett.png) |
+| ![rew](images/mix.png) | ![rew](images/diff_gamma_cart.png) | ![len](images/archit.png) |
 
 
 4. **Stochastic and Deterministic Average Evaluation Rewards**

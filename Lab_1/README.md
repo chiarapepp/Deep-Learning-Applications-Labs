@@ -7,7 +7,7 @@ All experiments are tracked with Weights & Biases. You can find the complete log
 
 Main Objectives:
 
-- Reproducing (at a smaller scale) results from the paper: [*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385).
+- Reproducing, on a smaller scale, the findings of: [*Deep Residual Learning for Image Recognition*](https://arxiv.org/abs/1512.03385).
 - Understanding the effect of residual connections on model performance.
 - Investigating training dynamics and gradient flow.
 - Exploring transfer learning through fine-tuning techniques.
@@ -16,16 +16,15 @@ Main Objectives:
 
 ```
 Lab_1/
-├── main_ex1.py          # Main script for Exercise 1 (MLP/CNN experiments)
-├── main_ex2.py          # Main script for Exercise 2 (Fine-tuning experiments)
-├── models.py            # Model implementations (MLP, ResMLP, CNN)
-├── dataloaders.py       # Data loading utilities for MNIST, CIFAR-10, CIFAR-100
-├── train_eval.py        # Training and evaluation functions
-├── utils.py             # Utility functions (gradient analysis, feature extraction)
-├── run_experiments.sh   # Script to run all experiments
-├── Models/              # Saved model weights
-├── images/              # Folder containing figures/plots/results
-└── README.md            # This file
+├── main_ex1.py          # Main script for Exercise 1 (MLP/CNN experiments).
+├── main_ex2.py          # Main script for Exercise 2 (Fine-tuning experiments).
+├── models.py            # Model implementations (MLP, ResMLP, CNN).
+├── dataloaders.py       # Data loading utilities for MNIST, CIFAR-10, CIFAR-100.
+├── train_eval.py        # Training and evaluation functions.
+├── utils.py             # Utility functions (gradient analysis, feature extraction).
+├── run_experiments.sh   # Script to run all experiments.
+├── images/              # Folder containing figures/plots/results.
+└── README.md            # This file.
 ```
 
 ### Implemented Models
@@ -115,16 +114,20 @@ The first set of experiments involved applying MLP and ResMLP architectures to t
 #### MLP vs ResMLP on MNIST 
 
 **Key observations:** 
-1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy (see figure on the left below).
-Even with normalization (n1), some attempt to converge but remain very low (e.g., mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
+1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy. Even with normalization (n1), some attempt to converge but remain very low (e.g., mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
 → Direct confirmation of the ResNet thesis: deeper ≠ better accuracy; in fact, clear degradation without skip connections.
 
 2. **Residual connections save depth**: All resMLPs at depth=40 converge very well, for example `resmlp_w64_d40_n1_sched1` = 98.35% test acc vs `mlp_w64_d40_n1_sched1` = 88.7% (see figure on the right below).
 → Residuals keep training stable even in very deep architectures, unlike plain MLPs.
 
-| All MLPs at `depth=40`, different parameters | ResMLP vs MLP (`depth=40`, `scheduler`,`normalization`) |
+| Train Loss of all MLPs at `depth=40` (varying hyperparameters)| Validation Accuracy of all MLPs at `depth=40` (varying hyperparameters) |
 |--------------------------------------------|--------------------------------------------------------|
-| <img src="images/mlp_d40.png" height="300"> | <img src="images/mlp_resmlp_40.png" height="300"> |
+| <img src="images/mlp_d40.png" height="350"> | <img src="images/val_mlp.png" height="350"> |
+
+| ResMLP vs MLP Train Loss at `depth=40` (both use `scheduler + normalization`) |ResMLP vs MLP Validation Accuracy at `depth=40` (both use `scheduler + normalization`) |
+|--------------------------------------------|--------------------------------------------------------|
+| <img src="images/mlp_resmlp_40.png" height="350"> |<img src="images/val.png" height="350"> |
+
 
 3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from `97.77%` (`resmlp_w32_d10_n1_sched1`) to `98.59%` (`resmlp_w128_d10_n1_sched1`).
 

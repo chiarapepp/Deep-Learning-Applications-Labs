@@ -101,28 +101,34 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 -> Using a value baseline drastically reduces the variance of REINFORCE and ensures stable convergence!
 
 
-|  | DistilBERT+ Lora comparison padding fixed vs dynamics |
+| Average reward of different baselines  | Average length of the episode, different baselines |
 |---------------|----------------|
-| ![fixed](images/d_p_lora.png) | ![dynamic](images/dynamic_fixed_padding.png) |
+| ![rew](images/baseline_avg_reward.png) | ![len](images/length_baseline.png) |
 
 
 2. **Core Hyperparameters:**
 - The sweet spot for the discount factor (`gamma`) is 0.95–0.99, too lower (0.90) or too higher (0.999) disrupts training.
 - Low temperatures (`T`) cause policy collapse. Scheduling enhances initial exploration and improves convergence.
-- The entropy coefficient had marginal effect in CartPole maybe it's more relevant in complex environments.
-
-
-
 
 3. **Architecture & Regularization:**
 - Larger networks help only if baseline is stable otherwise, they worsen instability.
 - Gradient clipping & normalization help control variance and stabilize training, especially with a value baseline!
 
+| |  |   |
+|---------------|----------------|---------------|
+| ![rew](images/mix.png) | ![rew](images/diff_gamma_cart.png) | ![len](images/architett.png) |
+
 
 4. **Stochastic and Deterministic Average Evaluation Rewards**
-
+| |  |
+|---------------|----------------|
+| ![rew]() | ![len]() |
 
 ### Qualitative Results
+
+| Cartpole no baseline | Value scheduler   | 
+|---------------|----------------|
+| ![nobase](gif/cartpole_no_base.gif) | ![len](gif/cartpole_value_scheduler.gif) |
 
 
 ## LunarLander-v3 Experiments

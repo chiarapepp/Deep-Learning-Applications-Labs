@@ -213,6 +213,7 @@ The three experiments with augmentations and skip connection achieve the higher 
 - `cnn_augm_skip1_L5-6-8-5_sched1 = 85.3%`.
 - `cnn_augm_skip1_L3-4-6-3_sched1 = 85.4%`.
 - `cnn_augm_skip1_L2-2-2-2_sched1 = 85.0%`.
+
 All clearly outperform models without augmentation (max ~78%).
 
 -> Data augmentation provides a substantial boost in performance!
@@ -227,7 +228,7 @@ Accuracy comparison for models with and without augmentation. Models with augmen
 
 | Validation Accuracy| 
 |--------------------------------------------|------------------------------------|
-| ![trainloss](images/val_accu_augm.png)  |
+| ![valacc](images/val_acc_augm.png)  |
 
 
 ## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100

@@ -195,8 +195,11 @@ All models surpass **75–78%** accuracy. For examples `cnn_skip1_L3-4-6-3_sched
 | cnn_skip0_L5-6-8-5_sched1 | *0.2747*      |                  
 | cnn_skip1_L2-2-2-2_sched1 | 0.7795        |                  
 | cnn_skip1_L3-4-6-3_sched1 | **0.7788**    |                  
-| cnn_skip1_L5-6-8-5_sched1 | 0.7780        |                  
-| Train Loss Curve | <img src="images/ski.png" width="600"> |
+| cnn_skip1_L5-6-8-5_sched1 | 0.7780        |   
+
+| Train Loss Curve|
+|---------------------------|
+| <img src="images/ski.png" width="600"> |
 
 
 2. **Effect of data augmentation (augm vs non-augm)**: I had good results, but I decided to introduce some data augmentations on the CIFAR10 dataset (all experiments without `augm` were run without augmentations). In particular I applied **random cropping** (`transforms.RandomCrop(32, padding=4)`) and **random horizontal flipping** (`transforms.RandomHorizontalFlip`). I found that these augmentations significantly improved the accuracy!
@@ -236,49 +239,32 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 ## Results
 For the final experiments I first conducted linear evaluation by freezing all layers to assess the quality of the learned representations. Then, I progressively unfreezed deeper layers for partial fine-tuning and left only the first layer frozen for almost full fine-tuning. These experiments allowed me to study the impact of different fine-tuning strategies on adaptation to the target dataset.
 
-1. Effect of freezing
+1. **Effect of freezing:** 
+- **Freeze layer1** (only the first block frozen, most blocks trainable)→ Best performance: up to 54.6% test accuracy with Adam, lr=0.001, and scheduler active.
 
-Freeze layer1 (i.e., only the first block frozen, most blocks trainable)
-→ Best performance: up to 54.6% test accuracy with Adam, lr=0.001, and scheduler active.
-This shows that transfer from CIFAR-10 to CIFAR-100 works well if you reuse only low-level features (edges, textures) while allowing higher layers to adapt.
+- **Freeze layer1 + layer2** → Accuracy drops: max 50.1%. Adaptability decreases because too many intermediate convolutional layers are blocked (which encode mid-level features, crucial for distinguishing among 100 classes).
 
-Freeze layer1 + layer2
-→ Accuracy drops: max 50.1%. Adaptability decreases because too many intermediate convolutional layers are blocked (which encode mid-level features, crucial for distinguishing among 100 classes).
+- **Freeze layer1+layer2+layer3+layer4** (fine-tuning only the classifier)→ Sharp collapse: 25–34% accuracy. In practice, the model is used only as a feature extractor pretrained on CIFAR-10, but those features are not discriminative enough for CIFAR-100.
 
-Freeze layer1+layer2+layer3+layer4 (i.e., fine-tuning only the classifier)
-→ Sharp collapse: 25–34% accuracy. In practice, the model is used only as a feature extractor pretrained on CIFAR-10, but those features are not discriminative enough for CIFAR-100.
+-> Best results come from freezing only the first layers; freezing too much compromises adaptability.
 
-👉 Conclusion (freezing): Best results come from freezing only the first layers; freezing too much compromises adaptability.
-
-2. Effect of the optimizer
-
-Adam clearly outperforms SGD in all scenarios.
-With Adam, accuracy always reaches 53–55%, while SGD struggles to go beyond ~48% even with scheduler.
+2. **Effect of the optimizer:** Adam clearly outperforms SGD in all scenarios, the accuracy always reaches 53–55%, while SGD struggles to go beyond ~48% even with scheduler.
 With low learning rate, SGD even collapses to ~30–38%.
 
-👉 Adam is better suited for this setup, likely because the combination of fine-tuning and the more complex dataset (CIFAR-100) requires faster parameter adaptation, which Adam handles better.
+-> Adam is better suited for this setup, likely because the combination of fine-tuning and the more complex dataset (CIFAR-100) requires faster parameter adaptation, which Adam handles better.
 
-3. Effect of learning rate
-
-For Adam, lr=0.001 works better than 0.01:
-
+3. **Effect of learning rate**
+- For Adam, lr=0.001 works better than 0.01:
 lr=0.01 → overfitting/instability (higher loss, lower accuracy).
-
 lr=0.001 → lower loss, better accuracy.
 
-For SGD, the opposite holds: lr=0.01 is better than 0.001 (but still worse than Adam).
-
+- For SGD, the opposite holds: lr=0.01 is better than 0.001 (but still worse than Adam).
 With too low lr (0.001), SGD fails to converge.
 
-👉 Optimal learning rate depends on optimizer: Adam → 0.001, SGD → 0.01.
-
-4. Effect of scheduler
-
+4. **Effect of scheduler**: 
 With Adam, the scheduler consistently improves results slightly (e.g., 52.5% → 54.6%).
-
 With SGD, it sometimes worsens performance (e.g., freeze layer1, lr=0.01: 52.4% → 52.6% ≈ same accuracy, but higher train_loss).
 
-👉 Conclusion: Scheduler is beneficial with Adam, negligible or even harmful with SGD.
 
 
 

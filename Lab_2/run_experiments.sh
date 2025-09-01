@@ -7,8 +7,7 @@
 # Common argument sets
 CARTPOLE_ARGS="--env cartpole --episodes 1000 --eval_interval 50 --eval_episodes 20"
 LUNARLANDER_ARGS="--env lunarlander --episodes 2000 --eval_interval 100 --eval_episodes 20"
-CARTPOLE_EXTENDED="--env cartpole --episodes 1500 --eval_interval 50 --eval_episodes 20"
-LUNARLANDER_EXTENDED="--env lunarlander --episodes 3000 --eval_interval 100 --eval_episodes 20"
+LUNARLANDER_EXTENDED="--env lunarlander --episodes 5000 --eval_interval 100 --eval_episodes 20"
 
 # ====================================================
 # REINFORCE with No Baseline on CartPole 
@@ -133,17 +132,6 @@ python main.py $LUNARLANDER_ARGS --baseline value --det --run_name "REINFORCE_Lu
 # Lunar Lander longer
 # ========================================
 
-# # No baseline
-
-# ========================================
-# FINAL BEST CONFIGURATIONS
-# ========================================
-
-# 7.1 Best configuration for CartPole (final comparison)
-python main.py $CARTPOLE_EXTENDED --baseline value --normalize --clip_grad --T 1.5 --t_schedule exponential --entropy_coeff 0.01
-
-# 7.2 Best configuration for LunarLander (final comparison)
-python main.py $LUNARLANDER_EXTENDED --baseline value --normalize --clip_grad --lr 5e-4 --T 1.2 --t_schedule linear --entropy_coeff 0.02
-
-
-
+python main.py $LUNARLANDER_EXTENDED --baseline value --normalize --clip_grad --run_name "REINFORCE_LunarLander_value_baseline_normalize_clip_grad"
+python main.py $LUNARLANDER_EXTENDED --baseline value --num_layers 2 --hidden_dim 256 --normalize --clip_grad --run_name "REINFORCE_LunarLander_value_baseline_norm_clip_2_256"
+python main.py $LUNARLANDER_EXTENDED --baseline value --normalize --clip_grad --det --run_name "REINFORCE_LunarLander_value_baseline_deterministic"

@@ -26,7 +26,7 @@ opt: The optimizer to load the state_dict into (optional).
 
 """
 
-def load_checkpoint(fname, model, opt=None):
+def load_checkpoint(model,fname,  opt=None):
     checkpoint = torch.load(fname)
     model.load_state_dict(checkpoint["model_state_dict"])
     if opt:

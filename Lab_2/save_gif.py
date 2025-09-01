@@ -49,21 +49,16 @@ def make_gif(env, policy, checkpoint, gif_path, temperature=1.0, deterministic=F
 
 def main():
     parser = argparse.ArgumentParser()
-    
-    parser.add_argument("--episodes", type=int, default=10, help="Number of training episodes")
-    
+    parser.add_argument("--episodes", type=int, default=1, help="Number of full environment episodes to run and record in the GIF.")
     parser.add_argument("--num_layers", type=int, default=1, help="Number of hidden layers in the policy and value networks")
     parser.add_argument("--hidden_dim", type=int, default=128, help="Width of the layers in the policy and value networks")
     
     parser.add_argument("--det", action="store_true", help="Enable deterministic policy evaluation every --eval-interval iterations")
     parser.add_argument("--T", type=float, default=1.0, help="Softmax temperature for the policy. If a temperature scheduler is used, this will be the starting temperature")
     
-    parser.add_argument("--t_schedule", choices=["linear", "exponential"], help="Choose between a linear or exponential temperature scheduler")
-    parser.add_argument("--entropy_coeff", type=float, default=0.01, help="Coefficient for entropy regularization")
-    
     parser.add_argument("--env", default="cartpole", choices=["cartpole", "lunarlander"], help="Choose between the Cartpole and the LunarLander environment")
     parser.add_argument("--checkpoint", type=str, default="wandb/latest-run/files/checkpoint-best_eval_policy.pt")
-    parser.add_argument("--gif-path", type=str, default="cartpole.gif", help="Path to save the gif.")
+    parser.add_argument("--gif_path", type=str, default="cartpole.gif", help="Path to save the gif.")
 
     args = parser.parse_args()
     
@@ -78,11 +73,8 @@ def main():
     policy = PolicyNetwork(env, hidden_dim=args.hidden_dim, num_layers=args.num_layers)
     policy.eval()
 
-    # Load checkpoint
-    policy = load_checkpoint(policy, args.checkpoint)
-
     print(f"Recording GIF to {args.gif_path}...")
-    make_gif(env, policy, args.checkpoint, args.gif_path, temperature=args.T, deterministic=args.det)
+    make_gif(env, policy, args.checkpoint, args.gif_path, temperature=args.T, deterministic=args.det, episodes=args.episodes)
 
 if __name__ == "__main__":
     main()

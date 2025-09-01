@@ -31,11 +31,9 @@ def parse_args():
     parser.add_argument("--env", default="cartpole", choices=["cartpole", "lunarlander"], help="Choose between the Cartpole and the LunarLander environment")
 
     parser.add_argument("--visualize", action="store_true", help="Visualize final agent")
-    parser.add_argument("--make_gif", action="store_true", help="Create GIF of trained agent")
-    parser.add_argument("--gif_dir", type=str, default="./gifs", help="Directory where to save the GIF")    
-
+    
     parser.add_argument("--run_name", type=str, default=None, help="Wandb run name. If None, a name will be automatically generated")
-    parser.set_defaults(visualize=False, make_gif=False)
+    parser.set_defaults(visualize=False)
     
     args = parser.parse_args()
     return args

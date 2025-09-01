@@ -2,201 +2,152 @@
 
 ## Overview
 This lab implements the REINFORCE algorithm to train an agent in the **CartPole-v1** and **LunarLander-v3** environments using PyTorch. 
-The project supports various enhancements including value baselines, entropy regularization, gradient clipping, and temperature scheduling.
+The implementations supports various enhancements including value baselines, entropy regularization, gradient clipping, and temperature scheduling.
 
 All experiments are tracked with Weights & Biases. You can find the complete logs and results here: [Lab_2 Results](https://wandb.ai/chiara-peppicelli-university-of-florence/DLA_Lab_2?nw=nwuserchiarapeppicelli).  
 
 Main objectives: 
-
-
+- Implement REINFORCE on two environments: CartPole and LunarLander.
+- Improve evaluation metrics by periodically testing the agent over multiple episodes and track average reward and episode length.
+- Explore different baseline strategies for variance reduction.
+- Analyze the impact of hyperparameters on training stability.
 
 ### Project Structure
 
 ```
-├── main.py           # Entry point for training.
-├── reinforce.py      # Core REINFORCE training loop.
-├── networks.py       # Networks definitions (Policy and value).
-├── utils.py          # Utility functions for training and evaluation.
-├── save_gif.py       # Script to render a gif of a trained agent.
-├── images/           # Folder containing figures/plots/results.
-└── README.md         # This file.
+├── main.py                # Entry point for training.
+├── reinforce.py           # Core REINFORCE training loop.
+├── networks.py            # Networks definitions (Policy and value).
+├── utils.py               # Utility functions for training and evaluation.
+├── save_gif.py            # Script to render a gif of a trained agent.
+├── gif/                   # Folder containing saved gif.
+├── images/                # Folder containing figures/plots/results.
+├── run_experiments.sh     # Comprehensive experiment runner script
+└── README.md              # This file.
 ```
+
+**Networks**:
+  - `PolicyNet`: Feedforward policy network for action selection.
+  - `ValueNet`: Optional baseline network for advantage estimation.
 
 ### Requirements
 All core dependencies are already listed in the main repository’s `requirements.txt`.
 
 Alternatively, it's possible to install them manually: 
 ```bash 
-pip 
+pip install torch gymnasium wandb matplotlib pygame imageio 
 ```
-(Optional but recommended) Log in to Weights & Biases:
+Log in to Weights & Biases:
 ```bash
 wandb login
 ```
 
-
-
-
-- **Training (main script)**:
-  - Trains a policy using the REINFORCE algorithm.
-  - Supports optional baselines: none, std or learned (value network).
-  - Allows advantage normalization, gradient clipping, and temperature scheduling.
-  - Evaluates and logs performance to wandb.
-
-- **Networks**:
-  - `PolicyNet`: Feedforward policy network for action selection.
-  - `ValueNet`: Optional baseline network for advantage estimation.
-
-- **Evaluation & Visualization**:
-  - Stochastic and Deterministic Policy sampling.
-  - `visualize.py`: Loads a trained policy checkpoint and runs it in a visual environment for inspection.
-  - Register `.gif` of agents in the Cartpole/LunarLander visual environment 
-
-- **Utilities**:
-  - Modular structure to allow plug-and-play of environments, policies, and configurations.
-  - Command-line arguments for different training and evaluation setups.
-  
-
-
----
-
-## 🚀  Usage
-
-Use `main.py` to train an agent on a given environment.
-
-### 🔧 Example: Train an agent on LunarLander-v3 
+### Running Experiments
+All experiments are managed through a single script `main.py.` It is also possible to record a trained policy and save the interaction as a GIF, either in deterministic or stochastic mode, with adjustable temperature, using the script `save.py`.
 
 ```bash
-python main.py --env lunarlander --baseline std --episodes 1000 --depth 2 --width 256 --normalize --clip-grad --det --T 1.0 --t-schedule exp
+# Train on CartPole with value baseline
+python main.py --env cartpole --baseline value --episodes 1000
+
+# LunarLander with all advanced techniques
+python main.py --env lunarlander --baseline value --normalize --clip_grad --T 2.0 --t_schedule exponential --entropy_coeff 0.01 --episodes 2000
+
+# Enable visualization of trained agent
+python main.py --env cartpole --baseline std --episodes 500 --visualize
+
+# Save a gif of best LunarLander trained agent 
+python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-best_eval_policy.pt  --det --gif_path landing_demo.gif
 ```
 
-### 🎮 Example: Visualize a pretrained agent trying to do its best
+#### Arguments 
+1. **Environment and Training:**
+    - `--env`: Environment choice (`cartpole`, `lunarlander`).
+    - `--episodes`: Number of training episodes (cartpole `1000`, lunarlander `2000`)
+    - `--lr`: Learning rate (default: `1e-3`).
+    - `--gamma`: Discount factor for future rewards (default: `0.99`).
+2. **Baseline Configuration:**
+    - `--baseline`: Baseline type (`none`, `std`, `value`).
+    - `--normalize`: Normalize advantages (`G_t - b_t`) to zero mean and unit variance.
+    - `--clip_grad`: Enable gradient clipping.
+3. **Architecture:**
+    - `--num_layers`: Number of hidden layers (default: `1`)
+    - `--hidden_dim`: Hidden layer width (default: `128`).
+4. **Exploration and Regularization:**
+    - `--T`: Softmax temperature (default: `1.0`). If a temperature scheduler is used, this will be the starting temperature.
+    - `--t_schedule`: Temperature scheduler (`linear`, `exponential`).
+    - `--entropy_coeff:`: Entropy regularization coefficient (default: `0.01`).
+5. **Evaluation:**
+    - `--eval_interval`: Evaluate every N episodes (default: `50`).
+    - `--eval_episodes`: Number of episodes for evaluation (default: `20`).
+    - `--det`: Enable deterministic policy evaluation every `--eval-interval` iterations.
+6. **Logging and Visualization:**
+    - `--visualize`: Show trained agent in action.
+    - `--run_name`: Wandb run name. If None, a name will be automatically generated.
 
-```bash
-python visualize.py --checkpoint path/to/policy_weights
-```
-### 🎮 Example: Save a gif of an agent landing on the moon
+7. **Saving GIF (`save_gif.py`):** accepts some of the arguments as `main.py`, because it need to reconstruct the network and environment exactly as in training (`--env`,`--T`,`--det`, `--num_layers`, `--hidden_dim`). In addition, it uses:
+  - `--episodes`: Number of full environment episodes to run and record in the GIF.
+  - `--make_gif`: Create GIF of a trained agent.
+  - `--gif_path`: Path to save the gif.   
+  - `--checkpoint`: Path to the checkpoint (default: best agent of the last run, `wandb/latest-run/files/checkpoint-best_eval_policy.pt`).
 
-```bash
-python visualize.py --checkpoint path/to/policy_weights --env lunarlander --gif --deterministic --gif-path landing_loop.gif
-```
-## 📥 Supported Arguments
+## Cartpole-v1 Experiments
 
-###  `main.py`
+**Key observations:**
+1. **Effect of the Baseline**:
+- No baseline: Performance is significantly worse. Average episode length stalls at ~100–200 steps. Rewards are unstable, and policy loss is very high (20–30), leading to noisy learning.
+- Standard deviation baseline (std baseline): Improvement compared to none, but still unstable—some runs remain low while others converge well. Average reward sometimes stays below 400.
+- Value baseline: Clearly the most stable. Many runs reach near-maximal rewards (~500 per episode). Even when varying hyperparameters (γ, entropy, T, architectures), convergence is robust.
 
-This script is the main training entry point for running the REINFORCE algorithm using PyTorch on CartPole-v1 or LunarLander-v3 environments. 
-
-- Manages experiment configuration and logging
-
-- Sets up environments and models
-
-- Trains a REINFORCE agent using the specified configuration
-
-- Optionally visualizes the trained agent
-
-| Argument              | Description                                                                 |
-|-----------------------|-----------------------------------------------------------------------------|
-| `--env`               | Environment to train on: `cartpole` or `lunarlander`                        |
-| `--baseline`          | Baseline to use: `none`, `std`, or `learned`                                |
-| `--episodes`          | Number of episodes to train for                                             |
-| `--depth`             | Number of hidden layers in policy/value networks                            |
-| `--width`             | Width of each hidden layer                                                  |
-| `--lr`                | Learning rate (default: `1e-3`)                                              |
-| `--gamma`             | Discount factor (default: `0.99`)                                           |
-| `--normalize`         | Normalize the advantage term                                                |
-| `--clip-grad`         | Clip gradients to unit norm                                                 |
-| `--det`               | Perform deterministic evaluations                                           |
-| `--T`                 | Initial temperature for action sampling                                     |
-| `--t-schedule`        | Temperature schedule: `lin`, `exp`, or leave unset for static temperature   |
-| `--eval-interval`     | How often to evaluate the policy                                            |
-| `--eval-episodes`     | Number of episodes to run during each evaluation                            |
-| `--visualize`         | Visualize the final trained policy after training                           |
-
-
-### `visualize.py`
+-> Using a value baseline drastically reduces the variance of REINFORCE and ensures stable convergence!
 
 
-This script is used to **load and visualize a trained policy network** in either the CartPole or LunarLander environments. 
-The policy is loaded from a specified checkpoint and used to run a number of episodes, rendered in a window for visual inspection.
-The script allows the user to optionally render a `.gif` of a previously trained agent acting inside the environment.
-
-| Argument         | Type    | Default                                               | Description                                                                 |
-|------------------|---------|-------------------------------------------------------|-----------------------------------------------------------------------------|
-| `--checkpoint`   | `str`   | `"wandb/latest-run/files/checkpoint-BEST_EVAL_POLICY.pt"` | Path to the policy checkpoint file.                                         |
-| `--episodes`     | `int`   | `10`                                                  | Number of episodes to run (used only if not recording a GIF).               |
-| `--temperature`  | `float` | `1.0`                                                 | Softmax temperature for the policy sampling.                                |
-| `--deterministic`| `flag`  | `False`                                               | If set, uses greedy action selection instead of sampling.                   |
-| `--env`          | `str`   | _(required)_                                          | Environment to run: `cartpole` or `lunarlander`.                            |
-| `--width`        | `int`   | `256`                                                 | Width of the hidden layers in the policy network.                           |
-| `--depth`        | `int`   | `2`                                                   | Number of hidden layers in the policy network.                              |
-| `--gif`          | `flag`  | `False`                                               | If set, records a single episode as a GIF instead of running multiple episodes interactively. |
-| `--gif-path`     | `str`   | `"lander.gif"`                                        | Output path for the recorded GIF if `--gif` is set.                         |
-
----
-
-## 📊 Evaluation & Logging
-
-Evaluation is done every `--eval-interval` steps with `--eval-episodes` episodes.
-
-Logged metrics include:
-- Episode return and length
-- Evaluation reward (stochastic and deterministic)
-- Losses: policy and value loss (if using learned baseline)
-- Temperature schedule
-
-Model checkpoints are saved to:
-```
-wandb/latest-run/files/checkpoint-BEST_EVAL_POLICY.pt
-```
-
----
-
-## 📊 Results Summary
-
-#### 🏗️ Cartpole-v1: Qualitative Results
-
-<p align="center">
-  <img src="images/cartpole_loop.gif" alt="Demo" />
-</p>
-
-#### 🏗️ Cartpole-v1: Stochastic and Deterministic Average Evaluation Rewards
-
-<p align="center">
-  <img src="images/cartpole_eval_avg_stochastic_reward.png" width="45%" alt="cnn OOD evaluation">
-  <img src="images/cartpole_avg_det_eval_reward.png" width="45%" alt="cartpolereward">
-</p>
-
-🔗 More results available at [Cartpole](https://wandb.ai/jaysenoner/DLA2025-Cartpole?nw=nwuserjaysenoner1999)
+|  | DistilBERT+ Lora comparison padding fixed vs dynamics |
+|---------------|----------------|
+| ![fixed](images/d_p_lora.png) | ![dynamic](images/dynamic_fixed_padding.png) |
 
 
-Observations:
-
-- (Personal) This was the hardest lab for me since I haven't got any prior experience in Reinforcement Learning. However, it was also the funniest one.
-- Reinforce without baseline (`none_base_eval`, yellow line) consistently performs poorly in both training and evaluation, struggling to achieve high rewards and exhibiting high instability. This clearly demonstrates the critical need for a baseline in REINFORCE
-- This is further confirmed by the other experiment without baseline but with a deeper and wider policy network (`none_w256_d2`, blue line), which shows a catastrophic collapse after initial learning, highlighting potential instability during training without baseline and proper hyperparameter tuning
-- Various learned baseline approaches (`linearT`, `expT`, `clip+norm`, `norm`) and the standardized reward baseline (`std_base_deteval`,) all show strong performance, generally converging to high rewards by around 400-600 steps.
-- There are minor differences in convergence speed and stability, but overall, most baseline strategies are effective for this simpler environment
-- Overall, better performances are reached by using a learned baseline with a temperature scaling (`learned_base_linearT`, green line  or `learned_base_expT`, orange line)
-
-#### 🌕 LunarLander-v3: Qualitative Results
-
-<p align="center">
-  <img src="images/landing_loop.gif" alt="Demo" />
-</p>
+2. **Core Hyperparameters:**
+- The sweet spot for the discount factor (`gamma`) is 0.95–0.99, too lower (0.90) or too higher (0.999) disrupts training.
+- Low temperatures (`T`) cause policy collapse. Scheduling enhances initial exploration and improves convergence.
+- The entropy coefficient had marginal effect in CartPole maybe it's more relevant in complex environments.
 
 
-#### 🌕 LunarLander-v3: Stochastic and Deterministic Average Evaluation Rewards
 
-<p align="center">
-  <img src="images/lander_eval_stochastic_avg_reward.png" width="45%" alt="cnn OOD evaluation">
-  <img src="images/lander_avg_det_eval_reward.png" width="45%" alt="cartpolereward">
-</p>
 
-🔗 More results available at [Wandb - LunarLander](https://wandb.ai/jaysenoner/DLA2025-LunarLander)
+3. **Architecture & Regularization:**
+- Larger networks help only if baseline is stable otherwise, they worsen instability.
+- Gradient clipping & normalization help control variance and stabilize training, especially with a value baseline!
 
-Observations:
 
-- To solve the LunarLander environment with REINFORCE I needed to implement a lot of tricks in order to stabilize training such as normalizing advantages, entropy regularization and temperature scaling
+4. **Stochastic and Deterministic Average Evaluation Rewards**
+
+
+### Qualitative Results
+
+
+## LunarLander-v3 Experiments
+
+**Key observations:**
+1. **Effect of the Baseline**:
+- No baseline: Very low and unstable performance. Average episodic reward often negative (e.g., -1070). Policy loss is high → training is nearly impossible.
+- Std baseline: Slight stabilization, but still noisy; average reward improves but remains inconsistent.
+- Value baseline: Clearly the best. Average episodic reward is often positive and consistent. Some runs reach ~700–750 in eval_avg_reward.
+
+-> As with CartPole, using a value baseline is essential for REINFORCE on LunarLander.
+2.  **Core Hyperparameters:**
+- Too low γ loses long-term reward information; too high γ makes training unstable. Optimal γ ~ 0.95–0.99 (similar to CartPole but it's even more sensitive).
+- On LunarLander, slightly lower LR than CartPole helps stability, especially with gradient clipping and normalization. Default lr = 1e-3 works reasonably well but slighty lower lr = 5e-4 with normalization + gradient clipping has a more stable training, on the other side too high lr makes the policy loss explode.
+- Runs with normalize + clip_grad hase better stabilization: higher average rewards, less noisy policy loss!
+- Here, differently from Cartpole, changing the entropy coefficient provide slightly changes, entropy = 0.01–0.05 maintains exploration (with optimal around 0.01), an higher coefficient provide no significant advantage.
+
+3. **Number of episodes:**
+- I also tried to experiment with longer episodes (5000) and I found out that
+- 1000 episodes: sometimes unstable, depending on other hyperparameters.
+4. **Stochastic and Deterministic Average Evaluation Rewards**
+
+### Qualitative Results
+
+
 - LunarLander is a more challenging environment, and this is reflected in the reward curves: Initial rewards are highly negative, and the learning process shows significant variance across different runs
 - I managed to achieve a peak average evaluation reward of approx `277` (violet curve) by training an agent with REINFORCE for `7000` episodes, using gradient clipping, advantage normalization, exponential temperature scheduling (with a starting temperature of `2`), entropy regularization and a deeper and wider network with respect to our baseline (`width = 256` instead of `128`, `depth = 2` instead of `1`)
 - For more complex tasks like LunarLander, REINFORCE exhibits higher variance and greater sensitivity to hyperparameters. Achieving good performance is possible but not guaranteed, often requiring careful tuning and potentially many trials. The results highlight the challenges of applying vanilla REINFORCE to harder problems without more advanced techniques for variance reduction or exploration. 

@@ -227,8 +227,8 @@ Additionally, as observed in the loss curves below, augmentation not only improv
 Accuracy comparison for models with and without augmentation. Models with augmentation consistently achieve higher validation accuracy: 
 
 | Validation Accuracy| 
-|--------------------------------------------|------------------------------------|
-| ![valacc](images/val_acc_augm.png)  |
+|------------------------|
+| <img src="images/val_acc_augm.png" width="400">  |
 
 
 ## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100

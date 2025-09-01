@@ -116,7 +116,7 @@ The first set of experiments involved applying MLP and ResMLP architectures to t
 
 → Direct confirmation of the ResNet thesis: deeper ≠ better accuracy; in fact, clear degradation without skip connections (reference figure 3 below).
 
-2. **Residual connections save depth**: All resMLPs at depth=40 converge very well, for example `resmlp_w64_d40_n1_sched1` = 98.35% test acc vs `mlp_w64_d40_n1_sched1` = 88.7%.
+2. **Residual connections enable deeper architectures**: All resMLPs at depth=40 converge very well, for example `resmlp_w64_d40_n1_sched1` = 98.35% test acc vs `mlp_w64_d40_n1_sched1` = 88.7%.
 
 → Residuals keep training stable even in very deep architectures, unlike plain MLPs.
 
@@ -131,7 +131,7 @@ The first set of experiments involved applying MLP and ResMLP architectures to t
 
 3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from `97.77%` (`resmlp_w32_d10_n1_sched1`) to `98.59%` (`resmlp_w128_d10_n1_sched1`).
 
-4. **Normalization is always useful**: For examples
+4. **Normalization is always useful**: For example
 - Without norm `mlp_w32_d20_n0_sched1`=`95.69%` accuracy.
 - With norm `mlp_w32_d20_n1_sched1`=97.41% accuracy.
 Residual + norm always pushes to the top (>98.5%).
@@ -245,52 +245,70 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 #### Fine-tuning Specific Arguments:
 - `--path`: Path to pre-trained model. 
 - `--svm_baseline`: Compute SVM as baseline.
-- `--freeze_layers`: Comma-separated layer names to freeze.
+- `--freeze_layers`: List of layer names to freeze.
 - `--optimizer`: 'SGD' or 'Adam'.
 - `--momentum`: Momentum for SGD optimizer (default=0.9) 
 
-
 ## Results
-For the final experiments I first conducted linear evaluation by freezing all layers to assess the quality of the learned representations. Then, I progressively unfreezed deeper layers for partial fine-tuning and left only the first layer frozen for almost full fine-tuning. These experiments allowed me to study the impact of different fine-tuning strategies on adaptation to the target dataset.
+For the final experiments, I began with linear evaluation, where all layers were frozen to assess the quality of the pretrained representations. Then I progressively unfroze deeper layers for partial fine-tuning, and finally left only the first block frozen for near-complete fine-tuning. This allowed me to study how different fine-tuning strategies influence adaptation to the CIFAR-100 dataset.
 
+As a baseline, I first used the pretrained model purely as a **feature extractor**, training a **Linear SVM** on the extracted features. The SVM achieved a test accuracy of **24.7%**, confirming that features learned on CIFAR-10 transfer poorly to CIFAR-100 without further adaptation. This provides a rather low reference point for subsequent experiments.
 
-Run 2025-08-28 16:12:57.668677: Val Acc = 0.2498, Test Acc = 0.2649
-Run 2025-08-28 16:21:28.086605: Val Acc = 0.2374, Test Acc = 0.2472
+**Effect of freezing or rather unfreezing layers:** :
 
+- **Freeze all layers (layer1–layer4)** : Only the classifier is trained. Accuracy remains very low (25–34%), essentially the model is reduced to a feature extractor pretrained on CIFAR-10, whose representations are not sufficiently discriminative for CIFAR-100. With `Adam`, `lr=1e-3`, the model reaches ~33%; with `SGD`, `lr=1e-3`, `~31%`. A larger learning rate slightly improves SGD but degrades Adam. 
 
-1. **Effect of freezing:** 
-- **Freeze layer1** (only the first block frozen, most blocks trainable)→ Best performance: up to 54.6% test accuracy with Adam, lr=0.001, and scheduler active.
+|Training Loss  | Validation Accuracy | 
+|--------------------------------------------|------------------------------------|
+| ![trainloss](images/ft_tloss_1_4.png)  | ![val loss](images/ft_val_1_4.png)  | 
 
-- **Freeze layer1 + layer2** → Accuracy drops: max 50.1%. Adaptability decreases because too many intermediate convolutional layers are blocked (which encode mid-level features, crucial for distinguishing among 100 classes).
+- **Freeze layer1 + layer2**: Unfreezing layers 3 and 4 has a significant improvement, the best result is obtained with `SGD`, `lr=0.01`, reaching 55% test accuracy. 
 
-- **Freeze layer1+layer2+layer3+layer4** (fine-tuning only the classifier)→ Sharp collapse: 25–34% accuracy. In practice, the model is used only as a feature extractor pretrained on CIFAR-10, but those features are not discriminative enough for CIFAR-100.
+- **Freeze only layer1**: Near full fine-tuning. This setup achieves the best overall results: 
+  - Adam, lr=0.001 → 54.6% test accuracy, 81% top-5 accuracy.
+  - SGD, lr=0.01 → 52.6% test accuracy. This is almost double the SVM baseline! 
 
--> Best results come from freezing only the first layers; freezing too much compromises adaptability.
+-> Unexpectely best results come from freezing only few layers, freezing too much compromises adaptability.
 
-2. **Effect of the optimizer:** Adam clearly outperforms SGD in all scenarios, the accuracy always reaches 53–55%, while SGD struggles to go beyond ~48% even with scheduler.
-With low learning rate, SGD even collapses to ~30–38%.
+| Validation Accuracy varying freezing strategies (fixed `lr=1e-3`, Adam optimizer)| 
+|------------------------|
+| <img src="images/ft_layess.png" width="600">  |
 
--> Adam is better suited for this setup, likely because the combination of fine-tuning and the more complex dataset (CIFAR-100) requires faster parameter adaptation, which Adam handles better.
+2. **Effect of the optimizer:** Adam outperforms SGD when only a few layers are unfrozen (layer1 or layer1+layer2) and the learning rate is low (0.001), reaching accuracies up to 54–55%, while SGD remains around 39–44%. With a higher learning rate (0.01) or more layers unfrozen, SGD can match or even surpass Adam, indicating that the choice of optimizer depends on the combination of unfrozen layers and learning rate. 
 
-3. **Effect of learning rate**
-- For Adam, lr=0.001 works better than 0.01:
-lr=0.01 → overfitting/instability (higher loss, lower accuracy).
-lr=0.001 → lower loss, better accuracy.
+| Validation Accuracy varying freezing strategies and optimizer (fixed `lr=1e-3` for Adam and `lr=1e-2` for SGD)| 
+|------------------------|
+| <img src="images/adam_vss_sgd.png" width="600">  |
 
-- For SGD, the opposite holds: lr=0.01 is better than 0.001 (but still worse than Adam).
-With too low lr (0.001), SGD fails to converge.
-
-4. **Effect of scheduler**: 
+3. **Effect of scheduler**: 
 With Adam, the scheduler consistently improves results slightly (e.g., 52.5% → 54.6%).
 With SGD, it sometimes worsens performance (e.g., freeze layer1, lr=0.01: 52.4% → 52.6% ≈ same accuracy, but higher train_loss).
 
+## Conclusions
 
+Summary Table:
+| Experiment        | Model                     | Dataset   | Config                  | Test Accuracy            |
+| ----------------- | ------------------------- | --------- | ----------------------- | ------------------------ |
+| **MLP**           | Plain MLP (40 layers)     | MNIST     | No residual             | **0.11–0.41** (collapse) |
+| **ResMLP**        | ResMLP (40 layers)        | MNIST     | Residual + norm + sched | **98.3%**                |
+| **MLP**           | MLP (20 layers, width 32) | MNIST     | w/o norm                | **95.7%**                |
+| **MLP**           | MLP (20 layers, width 32) | MNIST     | w/ norm                 | **97.4%**                |
+| **CNN**           | CNN (2-2-2-2)             | CIFAR-10  | No skip                 | **74–76%**               |
+| **CNN**           | CNN (3-4-6-3)             | CIFAR-10  | No skip                 | **59–70%**               |
+| **CNN**           | CNN (5-6-8-5)             | CIFAR-10  | No skip                 | **27–41%** (collapse)    |
+| **ResNet**        | CNN + residual            | CIFAR-10  | Skip + sched            | **77–78%**               |
+| **ResNet + Augm** | CNN + residual            | CIFAR-10  | Skip + augm + sched     | **85%**                  |
+| **Fine-tuning**   | ResNet-18 (pretrained)    | CIFAR-100 | SVM baseline            | **24.7%**                |
+| **Fine-tuning**   | ResNet-18 (freeze all)    | CIFAR-100 | Linear eval             | **25–34%**               |
+| **Fine-tuning**   | ResNet-18 (freeze l1+2)   | CIFAR-100 | SGD, lr=0.01            | **55%**                  |
+| **Fine-tuning**   | ResNet-18 (freeze l1)     | CIFAR-100 | Adam, lr=0.001          | **54.6%**  |
 
+**Key Observations**: Residuals make deep training possible, normalization and augmentation improve stability and generalization, and effective transfer learning requires selective fine-tuning with adaptive optimizers.
 
 ## References
 
-- [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385) — He et al., 201
-- [](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L204)
+- [Deep Residual Learning for Image Recognition.](https://arxiv.org/abs/1512.03385) — He et al., 2016
+- [ResNet model implementation in Torchvision.](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L204)
 
 
 

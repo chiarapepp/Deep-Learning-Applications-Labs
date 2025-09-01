@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument("--epochs", type=int, default=75, help="Number of train epochs")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size of the dataloaders")
     parser.add_argument("--freeze_layers", type=str, default="layer1,layer2", 
-                    help="Comma-separated list of layer names to freeze")
+                    help="List of layer names to freeze")
     parser.add_argument("--lr", type=float, default=0.005, help="Learning rate for the optimizer")
     parser.add_argument("--optimizer", type=str, choices=["SGD", "Adam"], default="SGD", help="Choose optimizer from SGD or ADAM")
     parser.add_argument("--momentum", type=float, default=0.9, help="Momentum for SGD optimizer")

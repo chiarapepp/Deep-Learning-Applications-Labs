@@ -252,9 +252,9 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 ## Results
 For the final experiments, I began with linear evaluation, where all layers were frozen to assess the quality of the pretrained representations. Then I progressively unfroze deeper layers for partial fine-tuning, and finally left only the first block frozen for near-complete fine-tuning. This allowed me to study how different fine-tuning strategies influence adaptation to the CIFAR-100 dataset.
 
-As a baseline, I first used the pretrained model purely as a **feature extractor**, training a **Linear SVM** on the extracted features. The SVM achieved a test accuracy of **24.7%**, confirming that features learned on CIFAR-10 transfer poorly to CIFAR-100 without further adaptation. This provides a rather low reference point for subsequent experiments.
+1. As a baseline, I first used the pretrained model purely as a **feature extractor**, training a **Linear SVM** on the extracted features. The SVM achieved a test accuracy of **24.7%**, confirming that features learned on CIFAR-10 transfer poorly to CIFAR-100 without further adaptation. This provides a rather low reference point for subsequent experiments.
 
-**Effect of freezing or rather unfreezing layers:** :
+2. **Effect of freezing or rather unfreezing layers:** :
 
 - **Freeze all layers (layer1–layer4)** : Only the classifier is trained. Accuracy remains very low (25–34%), essentially the model is reduced to a feature extractor pretrained on CIFAR-10, whose representations are not sufficiently discriminative for CIFAR-100. With `Adam`, `lr=1e-3`, the model reaches ~33%; with `SGD`, `lr=1e-3`, `~31%`. A larger learning rate slightly improves SGD but degrades Adam. 
 
@@ -274,15 +274,13 @@ As a baseline, I first used the pretrained model purely as a **feature extractor
 |------------------------|
 | <img src="images/ft_layess.png" width="600">  |
 
-2. **Effect of the optimizer:** Adam outperforms SGD when only a few layers are unfrozen (layer1 or layer1+layer2) and the learning rate is low (0.001), reaching accuracies up to 54–55%, while SGD remains around 39–44%. With a higher learning rate (0.01) or more layers unfrozen, SGD can match or even surpass Adam, indicating that the choice of optimizer depends on the combination of unfrozen layers and learning rate. 
+3. **Effect of the optimizer:** Adam outperforms SGD when only a few layers are unfrozen (layer1 or layer1+layer2) and the learning rate is low (0.001), reaching accuracies up to 54–55%, while SGD remains around 39–44%. With a higher learning rate (0.01) or more layers unfrozen, SGD can match or even surpass Adam, indicating that the choice of optimizer depends on the combination of unfrozen layers and learning rate. 
+Also, the adding of the scheduler, consistently slightly improves Adam results (e.g, 52.5% → 54.6%), with SGD the difference is small. 
 
 | Validation Accuracy varying freezing strategies and optimizer (fixed `lr=1e-3` for Adam and `lr=1e-2` for SGD)| 
 |------------------------|
 | <img src="images/adam_vss_sgd.png" width="600">  |
 
-3. **Effect of scheduler**: 
-With Adam, the scheduler consistently improves results slightly (e.g., 52.5% → 54.6%).
-With SGD, it sometimes worsens performance (e.g., freeze layer1, lr=0.01: 52.4% → 52.6% ≈ same accuracy, but higher train_loss).
 
 ## Conclusions
 

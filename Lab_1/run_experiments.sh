@@ -173,7 +173,7 @@ echo ""
 # EXERCISE 1.3: CNN EXPERIMENTS 
 # =============================================================================
 # Common arguments
-CNN_ARGS="--dataset CIFAR10 --lr 1e-3 --use_wandb"
+CNN_ARGS="--model cnn --dataset CIFAR10 --lr 1e-3 --use_wandb"
 # -----------------------------------------------------------------------------
 # CNN ResNet-18 style [2,2,2,2] 
 # -----------------------------------------------------------------------------
@@ -181,10 +181,10 @@ echo " Running CNN ResNet-18 style [2,2,2,2]"
 echo "  └── With/without residual connections and scheduler"
 echo ""
 
-python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --use_residual --layers 2 2 2 2     # scheduler, residual
-python main_ex1.py --model cnn $CNN_ARGS --use_residual --layers 2 2 2 2      # no scheduler, residual
-python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --layers 2 2 2 2     # scheduler, no residual
-python main_ex1.py --model cnn $CNN_ARGS --layers 2 2 2 2     # no scheduler, no residual
+python main_ex1.py $CNN_ARGS --use_scheduler --use_residual --layers 2 2 2 2     # scheduler, residual
+python main_ex1.py $CNN_ARGS --use_residual --layers 2 2 2 2      # no scheduler, residual
+python main_ex1.py $CNN_ARGS --use_scheduler --layers 2 2 2 2     # scheduler, no residual
+python main_ex1.py $CNN_ARGS --layers 2 2 2 2     # no scheduler, no residual
 
 # -----------------------------------------------------------------------------
 # CNN ResNet-34 style [3,4,6,3] 
@@ -192,10 +192,10 @@ python main_ex1.py --model cnn $CNN_ARGS --layers 2 2 2 2     # no scheduler, no
 echo " Running CNN ResNet-34 style [3,4,6,3]"
 echo "  └── With/without residual connections and scheduler"
 echo ""
-python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --use_residual --layers 3 4 6 3    # scheduler, residual
-python main_ex1.py --model cnn $CNN_ARGS --use_residual --layers 3 4 6 3     # no scheduler, residual
-python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --layers 3 4 6 3    # scheduler, no residual
-python main_ex1.py --model cnn $CNN_ARGS --layers 3 4 6 3    # no scheduler, no residual
+python main_ex1.py $CNN_ARGS --use_scheduler --use_residual --layers 3 4 6 3    # scheduler, residual
+python main_ex1.py $CNN_ARGS --use_residual --layers 3 4 6 3     # no scheduler, residual
+python main_ex1.py $CNN_ARGS --use_scheduler --layers 3 4 6 3    # scheduler, no residual
+python main_ex1.py $CNN_ARGS --layers 3 4 6 3    # no scheduler, no residual
 
 # -----------------------------------------------------------------------------
 # CNN ResNet-50 style [5,6,8,5]
@@ -203,10 +203,10 @@ python main_ex1.py --model cnn $CNN_ARGS --layers 3 4 6 3    # no scheduler, no 
 echo " Running CNN ResNet-50 style [5,6,8,5] (just to try a more deep network even though ResNet-50 uses Bottleneck blocks)"
 echo "  └── With/without residual connections and scheduler"
 echo ""
-python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --use_residual --layers 5 6 8 5  # scheduler, residual
-python main_ex1.py --model cnn $CNN_ARGS --use_residual --layers 5 6 8 5      # no scheduler, residual
-python main_ex1.py --model cnn $CNN_ARGS --use_scheduler --layers 5 6 8 5    # scheduler, no residual
-python main_ex1.py --model cnn $CNN_ARGS --layers 5 6 8 5         # no scheduler, no residual
+python main_ex1.py $CNN_ARGS --use_scheduler --use_residual --layers 5 6 8 5  # scheduler, residual
+python main_ex1.py $CNN_ARGS --use_residual --layers 5 6 8 5      # no scheduler, residual
+python main_ex1.py $CNN_ARGS --use_scheduler --layers 5 6 8 5    # scheduler, no residual
+python main_ex1.py $CNN_ARGS --layers 5 6 8 5         # no scheduler, no residual
 
 echo "CNN experiments completed!"
 echo ""

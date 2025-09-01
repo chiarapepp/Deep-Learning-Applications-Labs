@@ -72,7 +72,7 @@ Train and evaluate MLPs and CNNs on MNIST/CIFAR-10 with varying depth, width, no
 
 Run via command line using `main_ex1.py`.
 
-#### Common Arguments
+#### Common Arguments:
 - `--epochs`: Number of training epochs (default: `50` for MLPs, `75` for CNNs).
 - `--batch_size`: Batch size (default: `128`).
 - `--lr`: Learning rate (default: `0.001`).
@@ -95,7 +95,7 @@ python main_ex1.py --model resmlp --dataset MNIST --depth 20 --width 128 --norma
 ```
 In addition to the common arguments presented above, the arguments specific to MLP and ResMLP are:
 
-#### MLP/ResMLP Specific
+#### MLP/ResMLP Specific Arguments:
 - `--model`: Choose 'mlp' or 'resmlp'.
 - `--hidden_size`: Only for 'mlp', provide a custom list of layer sizes.
 - `--depth`: Number of hidden layers.
@@ -108,38 +108,39 @@ When using the MLP model (as opposed to ResMLP), there are two main ways to defi
 
 - Standard architecture with `--width` and `--depth`: This configuration enables a direct comparison with ResMLP, ensuring that both models have a comparable number of layers and units.
 
-### Results
+### Results MLP vs ResMLP on MNIST 
 The first set of experiments involved applying MLP and ResMLP architectures to the MNIST dataset. I tested models with different depths (`10`, `20`, `40`) and widths (`32`, `64`, `128`), considering both the presence or absence of normalization and the use of a learning rate scheduler. This allowed me to evaluate the effect of residual connections and architectural configurations on training stability and performance.
-
-#### MLP vs ResMLP on MNIST 
 
 **Key observations:** 
 1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy. Even with normalization (n1), some attempt to converge but remain very low (e.g., mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
-→ Direct confirmation of the ResNet thesis: deeper ≠ better accuracy; in fact, clear degradation without skip connections.
 
-2. **Residual connections save depth**: All resMLPs at depth=40 converge very well, for example `resmlp_w64_d40_n1_sched1` = 98.35% test acc vs `mlp_w64_d40_n1_sched1` = 88.7% (see figure on the right below).
+→ Direct confirmation of the ResNet thesis: deeper ≠ better accuracy; in fact, clear degradation without skip connections (reference figure 3 below).
+
+2. **Residual connections save depth**: All resMLPs at depth=40 converge very well, for example `resmlp_w64_d40_n1_sched1` = 98.35% test acc vs `mlp_w64_d40_n1_sched1` = 88.7%.
+
 → Residuals keep training stable even in very deep architectures, unlike plain MLPs.
 
-| Train Loss of all MLPs at `depth=40` (varying hyperparameters)| Validation Accuracy of all MLPs at `depth=40` (varying hyperparameters) |
+|1. Train Loss of all MLPs at `depth=40` (varying hyperparameters)| 2.ResMLP vs MLP Train Loss at `depth=40` (both use `scheduler + normalization`)   |
 |--------------------------------------------|--------------------------------------------------------|
-| <img src="images/mlp_d40.png" height="350"> | <img src="images/val_mlp.png" height="350"> |
+| <img src="images/mlp_d40.png" height="350"> | <img src="images/mlp_resmlp_40.png" height="350"> |
 
-| ResMLP vs MLP Train Loss at `depth=40` (both use `scheduler + normalization`) |ResMLP vs MLP Validation Accuracy at `depth=40` (both use `scheduler + normalization`) |
+|3. Validation Accuracy of all MLPs (different architecture but `scheduler + normalization`)|4. ResMLP vs MLP Validation Accuracy at `depth=40` (both use `scheduler + normalization`) |
 |--------------------------------------------|--------------------------------------------------------|
-| <img src="images/mlp_resmlp_40.png" height="350"> |<img src="images/val.png" height="350"> |
+| <img src="images/val_mlp.png" height="350"> |<img src="images/val.png" height="350"> |
 
 
 3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from `97.77%` (`resmlp_w32_d10_n1_sched1`) to `98.59%` (`resmlp_w128_d10_n1_sched1`).
 
 4. **Normalization is always useful**: For examples
-- Without norm (`mlp_w32_d20_n0_sched1`) = `95.69%` accuracy.
-- With norm (`mlp_w32_d20_n1_sched1`) = `97.41%` accuracy.
+- Without norm `mlp_w32_d20_n0_sched1`=`95.69%` accuracy.
+- With norm `mlp_w32_d20_n1_sched1`=97.41% accuracy.
 Residual + norm always pushes to the top (>98.5%).
+
 → Normalization mitigates instability, but alone is not enough for very deep nets (without residual they still collapse).
 
-| Comparison of Train Loss MLP models with and without normalization (depth=20, scheduler, various width)|
-|--------------------------------------------|
-| <img src="images/norm.png" height="350"> | 
+| Train Loss of MLP models with and without **normalization** (`depth=20`, scheduler, various width)|Validation Accuracy of MLP models with and without **normalization** (`depth=20`, scheduler, various width)   |
+|--------------------------------------------|---------------|
+| <img src="images/norm.png" height="350"> | <img src="images/acc_norm_val_mlp.png" height="350"> | 
 
 To better understand why residual connections improve training, I also analyzed the gradient flow in deep models.
 I computed the gradient norms of each layer for a single minibatch.
@@ -171,13 +172,13 @@ python main_ex1.py --model cnn --dataset CIFAR10 --layers 3 4 6 3 --use_residual
 ```
 In addition to the common arguments listed above, the CNN-specific arguments are:
 
-#### CNN Specific
+#### CNN Specific Arguments:
 - `--model`: Must be set to 'cnn'.
 - `--layers`: Layer pattern (e.g. 2 2 2 2 for ResNet-18).
 - `--use_residual`: Enable residual (skip) connections.
 
 ### Results CNN vs ResNet on CIFAR10
-The second set of experiments focused on CNNs applied to the **CIFAR-10** dataset. I experimented with ResNet-style models of varying depths (ResNet-18, ResNet-34, and a deeper ResNet-50-like network), with and without residual connections, and with or without a learning rate scheduler. These experiments helped me understand how architectural depth and skip connections affect model performance.
+The second set of experiments focused on applying CNNs to the **CIFAR-10** dataset. I experimented with ResNet-style models of varying depths (ResNet-18, ResNet-34, and a deeper ResNet-50-like network (only in configuration, without adding bottleneck blocks)), with and without residual connections, and with or without a learning rate scheduler. These experiments provided insights into how architectural depth and skip connections influence model performance.
 
 **Key observations:**
 
@@ -191,40 +192,48 @@ All models surpass **75–78%** accuracy. For examples `cnn_skip1_L3-4-6-3_sched
 
 -> For CNNs as well, residual connections stabilize training and enable deeper networks.
 
-| Model                     | Test Accuracy |
-|---------------------------|---------------|
-| cnn_skip0_L2-2-2-2_sched1 | 0.7658        |                  
-| cnn_skip0_L3-4-6-3_sched1 | 0.7069        | 
-| cnn_skip0_L5-6-8-5_sched1 | *0.2747*      |                  
-| cnn_skip1_L2-2-2-2_sched1 | 0.7795        |                  
-| cnn_skip1_L3-4-6-3_sched1 | **0.7788**    |                  
-| cnn_skip1_L5-6-8-5_sched1 | 0.7780        |   
-
-| Train Loss Curve|
-|---------------------------|
-| <img src="images/ski.png" width="600"> |
+Table of accuracy (note all models use scheduler):
+| Models                    | Architecture (L) | Test Accuracy |
+| ------------------------- | ---------------- | ------------- |
+| CNN                       | 2-2-2-2          | 0.7658        |
+| CNN                       | 3-4-6-3          | 0.7069        |
+| CNN                       | 5-6-8-5          | *0.2747*      |
+| CNN with skip connections | 2-2-2-2          | 0.7795        |
+| CNN with skip connections | 3-4-6-3          | **0.7788**    |
+| CNN with skip connections | 5-6-8-5          | 0.7780        |
 
 
-2. **Effect of data augmentation (augm vs non-augm)**: I had good results, but I decided to introduce some data augmentations on the CIFAR10 dataset (all experiments without `augm` were run without augmentations). In particular I applied **random cropping** (`transforms.RandomCrop(32, padding=4)`) and **random horizontal flipping** (`transforms.RandomHorizontalFlip`). I found that these augmentations significantly improved the accuracy!
+| Train Loss curve of the models above| Validation accuracy of the models above|
+|---------------------------|-----------|
+| <img src="images/ski.png" width="600"> | <img src="images/val_cnn_skip.png" width="600"> |
+
+
+2. **Effect of data augmentation (augm vs non-augm)**: I had good results, but I decided to introduce some data augmentations on the CIFAR10 dataset (all experiments without `_augm_` were run without augmentations). In particular I applied **random cropping** (`transforms.RandomCrop(32, padding=4)`) and **random horizontal flipping** (`transforms.RandomHorizontalFlip`). I found that these augmentations significantly improved the accuracy!
 The three experiments with augmentations and skip connection achieve the higher test accuracy (**~85%**):
-`cnn_augm_skip1_L5-6-8-5_sched1 = 85.3%`.
-`cnn_augm_skip1_L3-4-6-3_sched1 = 85.4%`.
-`cnn_augm_skip1_L2-2-2-2_sched1 = 85.0%`.
+- `cnn_augm_skip1_L5-6-8-5_sched1 = 85.3%`.
+- `cnn_augm_skip1_L3-4-6-3_sched1 = 85.4%`.
+- `cnn_augm_skip1_L2-2-2-2_sched1 = 85.0%`.
 All clearly outperform models without augmentation (max ~78%).
 
 -> Data augmentation provides a substantial boost in performance!
 
-| Comparison of train loss between models with different layers configurations and on dataset augmentation or not   | Val Loss of models..| 
-|--------------------------------------------|------------------------------------|
-| ![trainloss](images/augm_vs_no_skip_sched_1.png)  | ![val loss](images/augm_vs_skip_sched_1_val_loss.png)  | 
-| test accuracy 11.35% | test accuracy 96.65% | 
+Additionally, as observed in the loss curves below, augmentation not only improves accuracy but also reduces overfitting: training loss remains slightly higher compared to non-augmented models, while validation loss stays lower and more stable.
 
+|Training Loss Comparison with and without augmentation | Validation Loss Comparison| 
+|--------------------------------------------|------------------------------------|
+| ![trainloss](images/tloss_augm.png)  | ![val loss](images/val_loss_augm.png)  | 
+
+Accuracy comparison for models with and without augmentation. Models with augmentation consistently achieve higher validation accuracy: 
+
+| Validation Accuracy| 
+|--------------------------------------------|------------------------------------|
+| ![trainloss](images/val_accu_augm.png)  |
 
 
 ## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100
+For the second exercise, I decided to perform fine-tuning on CIFAR100. I chose to fine-tune one of the best-performing models on CIFAR10, specifically the smaller CNN ResNet-18 style model ([2,2,2,2]). This model was trained using data augmentation, skip connections, and a learning rate scheduler, since all models with this configuration achieved similar (and the best) top accuracies, I opted for the simpler architecture.
 
-For the second exercise I decided to do the finetuning on cifar100, since I had to do the fine tuning on one of the best performing models on cifar10, I used the models CNN ResNet-18 style, trained with data augmentation, skip connections and learning rate scheduler.
-
+Examples of how fine-tuning can be performed:
 ```bash
 # Linear evaluation (freeze all layers)
 python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "layer1,layer2,layer3,layer4" --optimizer SGD --lr 1e-3 --epochs 75
@@ -232,15 +241,21 @@ python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "laye
 # Fine-tuning (unfreeze last layers)
 python main_ex2.py --path Models/your_pretrained_model.pth --freeze_layers "layer1,layer2" --optimizer Adam --lr 1e-3 --use_scheduler --epochs 75
 ```
-
-#### Fine-tuning Specific
-- `--path`: Path to pre-trained model
-- `--freeze_layers`: Comma-separated layer names to freeze
-- `--optimizer`: 'SGD' or 'Adam'
+#### Fine-tuning Specific Arguments:
+- `--path`: Path to pre-trained model. 
+- `--svm_baseline`: Compute SVM as baseline.
+- `--freeze_layers`: Comma-separated layer names to freeze.
+- `--optimizer`: 'SGD' or 'Adam'.
+- `--momentum`: Momentum for SGD optimizer (default=0.9) 
 
 
 ## Results
 For the final experiments I first conducted linear evaluation by freezing all layers to assess the quality of the learned representations. Then, I progressively unfreezed deeper layers for partial fine-tuning and left only the first layer frozen for almost full fine-tuning. These experiments allowed me to study the impact of different fine-tuning strategies on adaptation to the target dataset.
+
+
+Run 2025-08-28 16:12:57.668677: Val Acc = 0.2498, Test Acc = 0.2649
+Run 2025-08-28 16:21:28.086605: Val Acc = 0.2374, Test Acc = 0.2472
+
 
 1. **Effect of freezing:** 
 - **Freeze layer1** (only the first block frozen, most blocks trainable)→ Best performance: up to 54.6% test accuracy with Adam, lr=0.001, and scheduler active.

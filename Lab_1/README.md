@@ -43,7 +43,7 @@ Lab_1/
   - Optional residual connections for comparison.
   - Suitable for feature extraction and transfer learning.
 
-### Datasets
+#### Datasets
 - **MNIST**: 28×28 grayscale digit (10 classes).
 - **CIFAR-10**: 32×32 color image (10 classes).
 - **CIFAR-100**: 32×32 color image (100 classes).

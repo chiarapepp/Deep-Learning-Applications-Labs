@@ -228,7 +228,7 @@ Accuracy comparison for models with and without augmentation. Models with augmen
 
 | Validation Accuracy| 
 |------------------------|
-| <img src="images/val_acc_augm.png" width="400">  |
+| <img src="images/val_acc_augm.png" width="600">  |
 
 
 ## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100

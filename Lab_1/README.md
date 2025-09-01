@@ -213,7 +213,7 @@ All clearly outperform models without augmentation (max ~78%).
 
 | Comparison of train loss between models with different layers configurations and on dataset augmentation or not   | Val Loss of models..| 
 |--------------------------------------------|------------------------------------|
-| ![trainloss](images/augm_vs_no_skip_sched_1.png)  | ![val loss](Lab_1/images/augm_vs_skip_sched_1_val_loss.png)  | 
+| ![trainloss](images/augm_vs_no_skip_sched_1.png)  | ![val loss](images/augm_vs_skip_sched_1_val_loss.png)  | 
 | test accuracy 11.35% | test accuracy 96.65% | 
 
 

@@ -108,7 +108,7 @@ if __name__ == "__main__":
         best_checkpoint_path = os.path.join(wandb.run.dir, "checkpoint-best_eval_policy.pt")
         
         if os.path.exists(best_checkpoint_path):
-            policy = load_checkpoint(best_checkpoint_path, policy)
+            policy = load_checkpoint(policy, best_checkpoint_path)
             print("Loaded best policy checkpoint")
         else:
             print("No checkpoint found, using final trained policy")

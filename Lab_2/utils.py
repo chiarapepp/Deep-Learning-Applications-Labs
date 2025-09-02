@@ -100,9 +100,7 @@ def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=Fals
     for i in range(max_steps):
         # Get the current observation, run the policy and select an action.
         obs = torch.tensor(obs, dtype=torch.float32)
-        (action, log_prob, entropy) = select_action(
-            env, obs, policy, temperature, deterministic
-        )
+        (action, log_prob, entropy) = select_action(env, obs, policy, temperature, deterministic)
         observations.append(obs)
         actions.append(action)
         log_probs.append(log_prob)

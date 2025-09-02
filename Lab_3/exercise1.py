@@ -19,23 +19,20 @@ import wandb
 This function loads a dataset, prints information about splits, sizes, label distribution, 
 and shows a sample from the training set.
 '''
-
 def load_and_explore_dataset() -> DatasetDict:
     """Load dataset and explore its structure"""
-    print(f"\nLoading dataset: {config.dataset_name}")
-    
+    print(f"\nLoading dataset: {config.dataset_name}") 
     ds = load_dataset(config.dataset_name)
-    
+
     print("\nDataset splits and sizes:")
     for split, data in ds.items():
         print(f"  {split}: {len(data):,} samples")
-        
         # Label distribution
         labels = data['label']
         pos_count = sum(labels)
         neg_count = len(labels) - pos_count
-        print(f"    Positive: {pos_count:,} ({pos_count/len(labels):.1%})")
-        print(f"    Negative: {neg_count:,} ({neg_count/len(labels):.1%})")
+        print(f"Positive: {pos_count:,} ({pos_count/len(labels):.1%})")
+        print(f"Negative: {neg_count:,} ({neg_count/len(labels):.1%})")
     
     print(f"\nSample from training set:")
     sample = ds["train"][0]
@@ -44,7 +41,6 @@ def load_and_explore_dataset() -> DatasetDict:
             print(f"  {key}: {value[:100]}...")
         else:
             print(f"  {key}: {value}")
-    
     return ds
 
 # -----------------------------------------------
@@ -56,7 +52,6 @@ This function loads a pre-trained model and tokenizer,
 tokenizes sample texts, prints tokenization details,
 and shows the shape of CLS embeddings from the last hidden state.
 '''
-
 def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None):
     print("\nExploration of pre-trained model and tokenizer outputs")
     
@@ -95,8 +90,8 @@ def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None):
         outputs = model(**encoded)
     
     # From Huggingface documentation
-    # last_hidden_state (tf.Tensor of shape (batch_size, sequence_length, hidden_size)) 
-    # — Sequence of hidden-states at the output of the last layer of the model.
+    # last_hidden_state (Tensor of shape (batch_size, sequence_length, hidden_size)) 
+    # it's the sequence of hidden states at the output of the last layer of the model.
 
     print(f"CLS token embeddings shape: {outputs.last_hidden_state[:, 0, :].shape}")
     print(f"Hidden size: {outputs.last_hidden_state.shape[-1]}")
@@ -111,7 +106,6 @@ This function extracts the CLS token features from a list of texts
 using a pre-trained transformer model, processing the texts in batches,
 and returns all features as a single NumPy array.
 '''
-
 def extract_cls_features(texts: List[str], tokenizer, model, batch_size: int = 32) -> np.ndarray:
     """Extract CLS token features from texts"""
     model.eval()
@@ -124,13 +118,7 @@ def extract_cls_features(texts: List[str], tokenizer, model, batch_size: int = 3
         batch_texts = texts[i:i + batch_size]
         
         # Tokenize batch
-        encoded = tokenizer(
-            batch_texts, 
-            padding=True, 
-            truncation=True, 
-            return_tensors="pt",
-            max_length=512
-        )
+        encoded = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt", max_length=512)
         encoded = {k: v.to(config.device) for k, v in encoded.items()}
 
         # Get model outputs
@@ -151,7 +139,6 @@ This function runs the SVM baseline:
 
 Returns a dictionary with validation and test metrics.
 '''
-
 def run_svm_baseline(use_wandb: bool = False):
     ds = load_dataset(config.dataset_name)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
@@ -176,7 +163,6 @@ def run_svm_baseline(use_wandb: bool = False):
     X_val_scaled = scaler.transform(X_val)
     if "test" in ds:
         X_test_scaled = scaler.transform(X_test)
-    
     
     if use_wandb:
         wandb.init(

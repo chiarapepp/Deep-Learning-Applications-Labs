@@ -20,7 +20,6 @@ Returns:
     input_size (int): Flattened input size of a single sample.
 """
 
-
 def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
     ds_train, ds_test, classes, input_size = None, None, 0, 0
 
@@ -36,8 +35,7 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
         input_size = 28 * 28
 
     elif name == "CIFAR10":
-        # Convert images to tensor and normalize with CIFAR-10 mean and std (RGB)
-
+        # Convert images to tensor and normalize with CIFAR-10 mean and std (RGB), added augmentations
         transform_augm_train = transforms.Compose([            
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
@@ -47,7 +45,7 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
                 std=[0.2470, 0.2435, 0.2616]
             )
         ])
-
+        # No augmentation for test set
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
@@ -72,7 +70,6 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
             )
         ])
         # No augmentation for test set
-        
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(
@@ -84,7 +81,6 @@ def get_dataloaders(name, batch_size, num_workers, val_ratio=0.1):
         ds_test = CIFAR100(root='./data', train=False, download=True, transform=transform)
         classes = 100
         input_size = 32 * 32 * 3
-
 
     else:
         raise ValueError(f"Dataset {name} not supported.")

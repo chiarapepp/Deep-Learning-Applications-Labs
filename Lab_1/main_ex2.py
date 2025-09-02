@@ -94,11 +94,11 @@ def main():
 
     # Fine-tuning the CNN on CIFAR100
     model = CNN(args.layers, classes=100, use_residual=True).to(device)
-    pretrained_dict = {k: v for k, v in model_cifar10.state_dict().items() if "fc" not in k}  # load weights except for the final layer.
+    pretrained_dict = {k: v for k, v in model_cifar10.state_dict().items() if "fc" not in k}  # load weights except for the final layer
     model.load_state_dict(pretrained_dict, strict=False)
 
     if hasattr(model, "fc"):
-        model.fc = torch.nn.Linear(model.fc.in_features, 100)     # new classifier head.
+        model.fc = torch.nn.Linear(model.fc.in_features, 100)     # new classifier head
         torch.nn.init.normal_(model.fc.weight, mean=0.0, std=0.01)
         torch.nn.init.zeros_(model.fc.bias)
     else:
@@ -115,7 +115,7 @@ def main():
         wandb.init(
             project='DLA_Lab_1',
             name=run_name,
-            config=args
+            config=vars(args)
         )
 
     if args.optimizer == "SGD":
@@ -126,7 +126,6 @@ def main():
         raise ValueError(f"Unknown optimizer {args.optimizer}")
 
     train(model, optimizer, train_dataloader, val_dataloader, device, args)
-
     top1, top5, test_loss = evaluate_model(model, test_dataloader, device)
 
     if args.use_wandb:
@@ -134,7 +133,6 @@ def main():
             "test_accuracy": top1,
             "test_top5_accuracy": top5
         })
-
 
     print(f"Final Test Results:")
     print(f"Top-1 Accuracy: {top1:.4f}")

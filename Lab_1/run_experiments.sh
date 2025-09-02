@@ -223,7 +223,7 @@ echo ""
 
 PATH_MODEL="Models/cnn_augm_skip1_L2-2-2-2_sched1.pth" 
 
-# Since the model was trained with skip connections we set --use_residual in the main as True
+# Since the model was trained with skip connections I set --use_residual in the main as True
 
 FINE_TUNE_ARGS="--use_wandb --path $PATH_MODEL --layers 2 2 2 2" 
 

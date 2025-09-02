@@ -275,7 +275,7 @@ Also, the adding of the scheduler, consistently slightly improves Adam results (
 
 | Validation Accuracy varying freezing strategies and optimizer (fixed `lr=1e-3` for Adam and `lr=1e-2` for SGD)| 
 |------------------------|
-| <img src="images/adam_vs_sgd.png" width="500">  |
+| <img src="images/adam_vs_sgd.png" width="700">  |
 
 
 ## Conclusions

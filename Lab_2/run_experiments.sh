@@ -13,7 +13,7 @@ LUNARLANDER_EXTENDED="--env lunarlander --episodes 5000 --eval_interval 100 --ev
 # REINFORCE with No Baseline on CartPole 
 # ====================================================
 
-# Baseline REINFORCE on CartPole (no baseline)
+# REINFORCE on CartPole (no baseline)
 python main.py $CARTPOLE_ARGS --baseline none --run_name "REINFORCE_CartPole_no_baseline"
 
 # Bigger architecture
@@ -75,7 +75,6 @@ python main.py $CARTPOLE_ARGS --baseline value --T 2.0 --t_schedule exponential 
 python main.py $CARTPOLE_ARGS --baseline value --entropy_coeff 0.0 --run_name "REINFORCE_CartPole_value_baseline_entropy_coeff=0.0"
 python main.py $CARTPOLE_ARGS --baseline value --entropy_coeff 0.05 --run_name "REINFORCE_CartPole_value_baseline_entropy_coeff=0.05"
 
-
 # ========================================
 # Deterministic evaluation on CartPole
 # ========================================
@@ -95,7 +94,7 @@ python main.py $CARTPOLE_ARGS --baseline value --det --run_name "REINFORCE_CartP
 # Lunar Lander Environment
 # ========================================
 
-# Base REINFORCE on LunarLander
+# REINFORCE on LunarLander (no baseline)
 python main.py $LUNARLANDER_ARGS --baseline none --run_name "REINFORCE_LunarLander_no_baseline"
 
 # REINFORCE with standardization baseline on LunarLander
@@ -110,7 +109,7 @@ python main.py $LUNARLANDER_ARGS --baseline value --normalize --clip_grad --run_
 # LunarLander with smaller learning rate
 python main.py $LUNARLANDER_ARGS --baseline value --lr 5e-4 --normalize --clip_grad --run_name "REINFORCE_LunarLander_value_baseline_lr=5e-4_normalize_clip_grad"
 
-# Gamma sensitivity for LunarLander
+# Comparison with different gamma values
 python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.90 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.9"
 python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.95 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.95"
 python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.999 --run_name "REINFORCE_LunarLander_value_baseline_gamma=0.999"
@@ -122,7 +121,7 @@ python main.py $LUNARLANDER_ARGS --baseline value --gamma 0.999 --run_name "REIN
 # # No baseline
 python main.py $LUNARLANDER_ARGS --baseline none --det --run_name "REINFORCE_LunarLander_no_baseline_deterministic"
 
-# Baseline sgd
+# Baseline std
 python main.py $LUNARLANDER_ARGS --baseline std --det --run_name "REINFORCE_LunarLander_std_baseline_deterministic"
 
 # Baseline value

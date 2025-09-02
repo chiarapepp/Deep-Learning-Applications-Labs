@@ -101,7 +101,7 @@ def main():
         wandb.init(
             project='DLA_Lab_1',
             name=run_name,
-            config=args
+            config=vars(args)
         )
 
     model = model.to(device)

@@ -130,9 +130,10 @@ The first set of experiments involved applying MLP and ResMLP architectures to t
 
 3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from 97.77% (`resmlp_w32_d10_n1_sched1`) to 98.59% (`resmlp_w128_d10_n1_sched1`).
 
-4. **Normalization is always useful**: For example
+4. **Normalization is always useful**: For example for the MLP
   - Without norm `mlp_w32_d20_n0_sched1`= 95.69% accuracy.
   - With norm `mlp_w32_d20_n1_sched1`= 97.41% accuracy.
+
   Residual + norm always pushes to the top (>98.5%).
 
 → Normalization mitigates instability, but alone is not enough for very deep nets (without residual they still collapse).
@@ -155,7 +156,7 @@ I ran MLP and ResMLP on MNIST with `depth=40` and `width=64` (no scheduler, no n
 
 
 ## CNN 
-The CNN model is implemented using the BasicBlock definition from torchvision in [torchvision](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L59).
+The CNN model is implemented using the BasicBlock definition from [torchvision](https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py#L59).
 
 Training can be performed with different configurations as shown below:
 

@@ -1,0 +1,104 @@
+accelerate==1.10.0
+aiohappyeyeballs==2.6.1
+aiohttp==3.12.15
+aiosignal==1.4.0
+annotated-types==0.7.0
+attrs==25.3.0
+box2d-py==2.3.8
+certifi==2025.8.3
+charset-normalizer==3.4.3
+click==8.2.1
+cloudpickle==3.1.1
+contourpy==1.3.3
+cycler==0.12.1
+datasets==4.0.0
+Deprecated @ file:///work/perseverance-python-buildout/croot/deprecated_1698868068243/work
+dill==0.3.8
+Farama-Notifications==0.0.4
+filelock @ file:///croot/filelock_1744281381737/work
+fonttools==4.59.1
+frozenlist==1.7.0
+fsspec==2025.3.0
+gitdb==4.0.12
+GitPython==3.1.45
+gmpy2 @ file:///croot/gmpy2_1738085463648/work
+gymnasium==1.2.0
+hf-xet==1.1.8
+huggingface-hub==0.34.4
+idna==3.10
+imageio==2.37.0
+importlib_metadata @ file:///croot/importlib_metadata-suite_1732633488278/work
+Jinja2 @ file:///croot/jinja2_1741710844255/work
+joblib==1.5.1
+kiwisolver==1.4.9
+lit @ file:///croot/llvm-package_1741800901749/work/llvm/utils/lit
+MarkupSafe @ file:///croot/markupsafe_1738584038848/work
+matplotlib==3.10.5
+mkl-service==2.4.0
+mkl_fft @ file:///io/mkl313/mkl_fft_1730824109137/work
+mkl_random @ file:///io/mkl313/mkl_random_1730823916628/work
+mpmath @ file:///work/perseverance-python-buildout/croot/mpmath_1698864994882/work
+multidict==6.6.4
+multiprocess==0.70.16
+networkx @ file:///croot/networkx_1737039604450/work
+numpy==2.2.6
+nvidia-cublas-cu12==12.8.4.1
+nvidia-cuda-cupti-cu12==12.8.90
+nvidia-cuda-nvrtc-cu12==12.8.93
+nvidia-cuda-runtime-cu12==12.8.90
+nvidia-cudnn-cu12==9.10.2.21
+nvidia-cufft-cu12==11.3.3.83
+nvidia-cufile-cu12==1.13.1.3
+nvidia-curand-cu12==10.3.9.90
+nvidia-cusolver-cu12==11.7.3.90
+nvidia-cusparse-cu12==12.5.8.93
+nvidia-cusparselt-cu12==0.7.1
+nvidia-nccl-cu12==2.27.3
+nvidia-nvjitlink-cu12==12.8.93
+nvidia-nvtx-cu12==12.8.90
+opencv-python==4.12.0.88
+opentelemetry-api @ file:///croot/opentelemetry-api_1743171649300/work
+packaging==25.0
+pandas==2.3.2
+peft==0.17.1
+pillow @ file:///croot/pillow_1752524526621/work
+platformdirs==4.3.8
+propcache==0.3.2
+protobuf==6.32.0
+psutil==7.0.0
+pyarrow==21.0.0
+pydantic==2.11.7
+pydantic_core==2.33.2
+pygame==2.6.1
+pyparsing==3.2.3
+python-dateutil==2.9.0.post0
+pytz==2025.2
+PyYAML==6.0.2
+regex==2025.7.34
+requests==2.32.5
+safetensors==0.6.2
+scikit-learn==1.7.1
+scipy==1.16.1
+sentry-sdk==2.35.0
+setuptools==72.1.0
+six==1.17.0
+smmap==5.0.2
+sympy @ file:///croot/sympy_1738108488918/work
+threadpoolctl==3.6.0
+tokenizers==0.21.4
+torch==2.8.0
+torchaudio @ file:///opt/conda/conda-bld/torchaudio_1747147230305/work
+torchvision==0.23.0
+tqdm==4.67.1
+transformers==4.55.4
+triton==3.4.0
+typing-inspection==0.4.1
+typing_extensions @ file:///croot/typing_extensions_1734714854207/work
+tzdata==2025.2
+urllib3==2.5.0
+wandb==0.21.1
+wheel==0.45.1
+wrapt @ file:///croot/wrapt_1736540904746/work
+xxhash==3.5.0
+yarl==1.20.1
+zipp @ file:///croot/zipp_1732630741423/work

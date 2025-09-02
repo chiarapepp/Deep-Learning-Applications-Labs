@@ -7,7 +7,6 @@ import imageio
 '''
 Utility function for model checkpointing.
 '''
-
 def save_checkpoint(name, model, opt, dir):
     torch.save(
         {
@@ -25,23 +24,20 @@ model: The model to load the state_dict into.
 opt: The optimizer to load the state_dict into (optional).
 
 """
-
-def load_checkpoint(model,fname,  opt=None):
+def load_checkpoint(model, fname, opt=None):
     checkpoint = torch.load(fname)
     model.load_state_dict(checkpoint["model_state_dict"])
     if opt:
         opt.load_state_dict(checkpoint["opt_state_dict"])
     return model
 
-
 '''
 This function takes in an environment, observation, policy, a temperature parameter and a 
-flag for deterministic or stochastic action selection (sample from pi(a | obs)).
+flag for deterministic or stochastic action selection (sample from pi(a|obs)).
 
 It returns the selected action, the log probability of that action (needed for policy gradient)
 and the entropy of the action distribution.
 '''
-
 def select_action(env, obs, policy, temperature=1.0, deterministic=False):
     probs = policy(obs, temperature=temperature)
 
@@ -66,7 +62,6 @@ Parameters:
     gamma (float): Discount factor.
 
 """
-
 def compute_returns(rewards, gamma):
     returns = np.zeros_like(rewards, dtype=np.float32)
     running_return = 0
@@ -74,8 +69,6 @@ def compute_returns(rewards, gamma):
         running_return = rewards[t] + gamma * running_return
         returns[t] = running_return
     return returns
-
-
 
 """
 Function that given an environment and a policy, run it up to the maximum number of steps.
@@ -87,15 +80,13 @@ Parameters:
     temperature (float): The temperature parameter for action selection. Default is 1.0.
     deterministic (bool): Whether to select actions deterministically or stochastically. Default is False.
 
-    Returns:
-    tuple: A tuple containing:
-        - observations (list): A list of observations throughout the episode.
-        - actions (list): A list of actions taken during the episode.
-        - log_probs (torch.Tensor): A tensor containing the log probabilities of the actions taken.
-        - rewards (list): A list of rewards received at each step.
-        - entropies (torch.Tensor): A tensor containing the entropies of the action distributions.
+Returns:
+    observations (list): A list of observations throughout the episode.
+    actions (list): A list of actions taken during the episode.
+    log_probs (torch.Tensor): A tensor containing the log probabilities of the actions taken.
+    rewards (list): A list of rewards received at each step.
+    entropies (torch.Tensor): A tensor containing the entropies of the action distributions.
 """
-
 def run_episode(env, policy, max_steps=1000, temperature=1.0, deterministic=False):
     
     observations = []

@@ -36,7 +36,6 @@ Lab_1/
   - MLP with residual connections between blocks.
   - Each block contains two linear layers with skip connections.
   - Configurable depth and width.
-  - Demonstrates residual learning benefits on MLPs.
 3. **CNN (Convolutional Neural Network)**
   - ResNet-style architecture with BasicBlocks.
   - Configurable layer patterns: e.g. [2,2,2,2], [3,4,6,3], [5,6,8,5].
@@ -60,7 +59,8 @@ pip install torch torchvision tqdm matplotlib scikit-learn wandb numpy
 wandb login
 ```
 
-**Running Experiments**:
+**Running Experiments**
+
 It's possible to run all the experiments with the provided script:
 ```bash
 chmod +x run_experiments.sh

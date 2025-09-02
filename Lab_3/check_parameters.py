@@ -19,27 +19,22 @@ def count_full_finetune_params():
     """
     Full fine-tuning of DistilBERT
     """
-    model = AutoModelForSequenceClassification.from_pretrained(
-        "distilbert-base-uncased", num_labels=2
-    )
+    model = AutoModelForSequenceClassification.from_pretrained("distilbert/distilbert-base-uncased", num_labels=2)
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("Full Fine-tuning DistilBERT:")
     print(f"  Total params: {total_params}")
     print(f"  Trainable params: {trainable_params}\n")
 
-def count_lora_params(rank=8, alpha=32, target_modules=None):
+def count_lora_params(rank=8, alpha=16, target_modules=None):
     """
     LoRA fine-tuning
     """
     if target_modules is None:
         target_modules = ["q_lin", "k_lin", "v_lin", "out_lin"]
-
     # Load base model
-    model = AutoModelForSequenceClassification.from_pretrained(
-        "distilbert-base-uncased", num_labels=2
-    )
-    
+    model = AutoModelForSequenceClassification.from_pretrained("distilbert/distilbert-base-uncased", num_labels=2)
+
     # Define LoRA config
     lora_config = LoraConfig(
         r=rank,
@@ -50,7 +45,6 @@ def count_lora_params(rank=8, alpha=32, target_modules=None):
         task_type="SEQ_CLS"
     )
     lora_model = get_peft_model(model, lora_config)
-    
     total_params = sum(p.numel() for p in lora_model.parameters())
     trainable_params = sum(p.numel() for p in lora_model.parameters() if p.requires_grad)
     
@@ -62,4 +56,11 @@ if __name__ == "__main__":
     count_svm_params()
     count_full_finetune_params()
     # LoRA rank=8 alpha=32
+    count_lora_params(rank=8, alpha=32, target_modules=["q_lin","k_lin","v_lin","out_lin"])
+    # LoRA rank=16 alpha=64
+    count_lora_params(rank=16, alpha=64, target_modules=["q_lin","k_lin","v_lin","out_lin"])
+    # LoRA rank=8 alpha=32
     count_lora_params(rank=8, alpha=32, target_modules=["q_lin","k_lin","v_lin","out_lin","lin1","lin2"])
+    # LoRA rank=16 alpha=64
+    count_lora_params(rank=16, alpha=64, target_modules=["q_lin","k_lin","v_lin","out_lin","lin1","lin2"])
+

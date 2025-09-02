@@ -18,7 +18,7 @@ def get_args():
     )
     
     # Dataset options
-    parser.add_argument("--sample_text", type=str, nargs="+", default=None,
+    parser.add_argument("--sample_texts", type=str, nargs="+", default=None,
                         help="Optional sample text(s) for exploration")
 
     # Training hyperparameters
@@ -33,7 +33,7 @@ def get_args():
     parser.add_argument("--target_modules", type=str, nargs="+", default=None, help="Target modules for LoRA")
 
     # Output and logging
-    parser.add_argument("--output_dir", type=str, default="runs/lab3_experiment")
+    parser.add_argument("--output_dir", type=str, default="runs/lab3_experiment", help="Directory for saving model checkpoints and logs")
     parser.add_argument("--use_wandb", action="store_true", help="Use Weights & Biases logging")
     parser.add_argument("--run_name", type=str, default=None, help="Name of the WandB run")
 

@@ -2,7 +2,7 @@
 
 This repository contains the implementation of three laboratory assignments developed as part of the exam for the **Deep Learning Applications** course, MSc in Artificial Intelligence at the University of Florence.
 
-Each lab is organized in a dedicated folder and includes all the code required to reproduce the experiments and results. Inside each folder, a `README.md` file provides details specific for each experiment, visualizations, and explanations of the design choices made, along with references and sources.
+Each lab is organized in a dedicated folder and includes all the code required to reproduce the experiments and results. Inside each folder, a `README.md` file provides details specific for each experiment, visualizations, and explanations of the design choices made, along with the references.
 
 To complement the code and documentation, full training logs and results are available through public Weights & Biases (W&B) project pages.
 

@@ -59,27 +59,18 @@ class ResMLPBlock(nn.Module):
     def __init__(self, hidden_dim, normalization):
         super().__init__()
         self.fc1 = nn.Linear(hidden_dim, hidden_dim)
+        self.bn1 = nn.BatchNorm1d(hidden_dim) if normalization else nn.Identity()
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
-
-        if normalization:
-            self.model = nn.Sequential(
-                self.fc1,
-                nn.BatchNorm1d(hidden_dim),
-                nn.ReLU(),
-                self.fc2,
-                nn.BatchNorm1d(hidden_dim),
-                nn.ReLU(),
-            )
-        else:
-            self.model = nn.Sequential(
-                self.fc1,
-                nn.ReLU(),
-                self.fc2,
-                nn.ReLU(),
-            )
+        self.bn2 = nn.BatchNorm1d(hidden_dim) if normalization else nn.Identity()
+        self.relu = nn.ReLU()
 
     def forward(self, x):
-        return self.model(x) + x
+        identity = x
+        out = self.relu(self.bn1(self.fc1(x)))
+        out = self.bn2(self.fc2(out))
+        out += identity
+        out = self.relu(out)
+        return out
 
 class ResMLP(nn.Module):
     def __init__(self, input_size, hidden_dim, num_blocks, classes, normalization):
@@ -104,7 +95,7 @@ class ResMLP(nn.Module):
 '''
 3. CNN
 
-The exercise allowed using the ResNet building blocks from `torchvision.models.resnet`, so I implemented my 
+The exercise allowed the use of the ResNet building blocks from `torchvision.models.resnet`, so I implemented my 
 own ResNet class based on these blocks, introducing a few modifications. 
 The main change is the option to disable skip connections, which allows experiments comparing the network 
 with and without them. 
@@ -186,12 +177,7 @@ class BasicBlock(nn.Module):
 
 
 class CNN(nn.Module):
-    def __init__(
-            self,
-            layers: List[int],
-            classes: int = 10,
-            use_residual: bool = True
-    ) -> None:
+    def __init__(self, layers: List[int], classes: int = 10, use_residual: bool = True) -> None:
         super().__init__()
 
         self.use_residual = use_residual
@@ -200,33 +186,31 @@ class CNN(nn.Module):
         self.groups = 1
         self.base_width = 64
 
+        # Initial convolutional layer (conv + batch norm + ReLU + maxpool)
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
+        # Create the four layers of the network using BasicBlocks
         self.layer1 = self._make_layer(64, layers[0], use_residual=self.use_residual)
         self.layer2 = self._make_layer(128, layers[1], stride=2, use_residual=self.use_residual)
         self.layer3 = self._make_layer(256, layers[2], stride=2, use_residual=self.use_residual)
         self.layer4 = self._make_layer(512, layers[3], stride=2, use_residual=self.use_residual)
         
+        # Global average pooling and final fully connected classifier
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512, classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
+                # Kaiming initialization for the weights of the convolution layers
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    def _make_layer(
-            self,
-            planes: int,
-            blocks: int,
-            stride: int = 1,
-            use_residual: bool = True
-    ) -> nn.Sequential:
+    def _make_layer(self, planes: int, blocks: int, stride: int = 1, use_residual: bool = True) -> nn.Sequential:
 
         downsample = None
         self.use_residual = use_residual

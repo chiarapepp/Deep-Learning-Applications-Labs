@@ -57,7 +57,6 @@ def train(model, optimizer, train_dataloader, val_dataloader, device, args):
                 }, step=epoch)
         train_bar.set_postfix(epoch_loss=f"{train_loss:.4f}")
 
-
 """
 Function that evaluates the model on a test or validation dataset.
 Performs inference, computes cross-entropy loss, and calculates top-1 and top-5 accuracy.

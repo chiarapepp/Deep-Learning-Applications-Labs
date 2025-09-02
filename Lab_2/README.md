@@ -101,7 +101,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 -> Using a value baseline drastically reduces the variance of REINFORCE and ensures stable convergence!
 
 
-| Average reward of different baselines  | Average length of the episode, different baselines |
+| Average reward of different baselines  | Average length of the episodes, different baselines |
 |---------------|----------------|
 | ![rew](images/baseline_avg_reward.png) | ![len](images/length_baseline.png) |
 
@@ -114,7 +114,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 - Larger networks help only if baseline is stable otherwise, they worsen instability.
 - Gradient clipping & normalization help control variance and stabilize training, especially with a value baseline!
 
-| Different types of regularization. | Gamma comparison.  | Architecture comparison.  |
+| Different types of regularization | Gamma comparison  | Architecture comparison  |
 |---------------|----------------|---------------|
 | ![rew](images/mix.png) | ![rew](images/diff_gamma_cart.png) | ![len](images/archit.png) |
 
@@ -130,11 +130,11 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 <table>
   <tr>
     <th>Cartpole no baseline.</th>
-    <th>Value scheduler.</th>
+    <th>Cartpole with value baseline + scheduler.</th>
   </tr>
   <tr>
-    <td><img src="gif/cartpole_no_base.gif" width="250"></td>
-    <td><img src="gif/cartpole_value_scheduler.gif" width="250"></td>
+    <td><img src="gif/cartpole_no_baseline.gif" width="350"></td>
+    <td><img src="gif/cartpole_value_scheduler.gif" width="350"></td>
   </tr>
 </table>
 
@@ -142,30 +142,51 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 **Key observations:**
 1. **Effect of the Baseline**:
-- No baseline: Very low and unstable performance. Average episodic reward often negative (e.g., -1070). Policy loss is high → training is nearly impossible.
-- Std baseline: Slight stabilization, but still noisy; average reward improves but remains inconsistent.
-- Value baseline: Clearly the best. Average episodic reward is often positive and consistent. Some runs reach ~700–750 in eval_avg_reward.
+- **No baseline**: Very low and unstable performance. Average episodic reward often negative (e.g., -1070). Policy loss is high and the training is nearly impossible.
+- **Std baseline**: Slight stabilization, but still noisy, the average reward improves but remains inconsistent.
+- **Value baseline**: Clearly the best. Average episodic reward is often positive and consistent. Some runs reach ~700–750 in `eval_avg_reward`. I also tried to experiment with longer episodes (5000) and I found out that they yield more stable performance (`eval_avg_reward` up to ~866).
 
 -> As with CartPole, using a value baseline is essential for REINFORCE on LunarLander.
+
+
+| Average reward of different baselines | Average length of the episodes, different baselines |
+|---------------|----------------|
+| ![rew](images/lunar_rew_baseline.png) | ![len](images/lunar_len_baseline.png) |
+
+
 2.  **Core Hyperparameters:**
-- Too low γ loses long-term reward information; too high γ makes training unstable. Optimal γ ~ 0.95–0.99 (similar to CartPole but it's even more sensitive).
-- On LunarLander, slightly lower LR than CartPole helps stability, especially with gradient clipping and normalization. Default lr = 1e-3 works reasonably well but slighty lower lr = 5e-4 with normalization + gradient clipping has a more stable training, on the other side too high lr makes the policy loss explode.
-- Runs with normalize + clip_grad hase better stabilization: higher average rewards, less noisy policy loss!
+- Too low `gamma` loses long term reward information while too high `gamma` makes training unstable. Optimal is in the range 0.95–0.99 (similar to CartPole but it's even more sensitive).
+- On LunarLander, slightly lower `lr` than CartPole helps stability, especially with gradient clipping and normalization. Default `lr = 1e-3` works reasonably well but slighty lower `lr = 5e-4` with normalization + gradient clipping has a more stable training. On the other side too high `lr` makes the policy loss explode.
+- Runs with `normalize + clip_grad` has better stabilization: higher average rewards, less noisy policy loss!
 - Here, differently from Cartpole, changing the entropy coefficient provide slightly changes, entropy = 0.01–0.05 maintains exploration (with optimal around 0.01), an higher coefficient provide no significant advantage.
 
-3. **Number of episodes:**
-- I also tried to experiment with longer episodes (5000) and I found out that
-- 1000 episodes: sometimes unstable, depending on other hyperparameters.
-4. **Stochastic and Deterministic Average Evaluation Rewards**
+
+| Different types of regularization. | Gamma comparison.  |
+|---------------|----------------|
+| ![rew](images/lunar_rew_reg.png) | ![rew](images/len_gammas.png) | 
+
+3. **Deterministic Average Evaluation Rewards**
+
+| Average rewards | Average length  |
+|---------------|----------------|
+| ![stoc](images/longer_det.png) | ![det](images/mix_longer_baseline_reg.png) |
+
 
 ### Qualitative Results
-
-
-- LunarLander is a more challenging environment, and this is reflected in the reward curves: Initial rewards are highly negative, and the learning process shows significant variance across different runs
-- I managed to achieve a peak average evaluation reward of approx `277` (violet curve) by training an agent with REINFORCE for `7000` episodes, using gradient clipping, advantage normalization, exponential temperature scheduling (with a starting temperature of `2`), entropy regularization and a deeper and wider network with respect to our baseline (`width = 256` instead of `128`, `depth = 2` instead of `1`)
-- For more complex tasks like LunarLander, REINFORCE exhibits higher variance and greater sensitivity to hyperparameters. Achieving good performance is possible but not guaranteed, often requiring careful tuning and potentially many trials. The results highlight the challenges of applying vanilla REINFORCE to harder problems without more advanced techniques for variance reduction or exploration. 
+<table>
+  <tr>
+    <th>Lunarlander no baseline.</th>
+    <th>Lunarlander with value baseline (5000 episodes and regularizations)</th>
+  </tr>
+  <tr>
+    <td><img src="gif/lunarlander_no_baseline.gif" width="350"></td>
+    <td><img src="gif/lunarlander_demo.gif" width="350"></td>
+  </tr>
+</table>
 
 ## Conclusions
+- REINFORCE works well on CartPole and LunarLander, but LunarLander is a more challenging  environment due to higher variance and negative initial rewards.
+- Using a value baseline, advantage normalization, and gradient clipping greatly stabilizes training. Also a proper tuning of learning rate, discount factor, entropy, and network size can help for convergence and high rewards.
 
 ## References
 

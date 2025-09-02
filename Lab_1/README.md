@@ -183,7 +183,7 @@ The second set of experiments focused on applying CNNs to the **CIFAR-10** datas
 **Key observations:**
 
 1. **With vs without skip connections**:
-  - Without skip: Deep models collapse: `cnn_skip0_L5-6-8-5_sched0 = 41% acc`, sched1 even worse = 27% acc. Medium architecture (L3-4-6-3) improves slightly but remains low (59–70%). Only the smallest one (L2-2-2-2) reaches ~74–76%.
+  - Without skip: Deep models collapse: `cnn_skip0_L5-6-8-5_sched0 = 41% acc`, `sched1` even worse = 27% acc. Medium architecture (L3-4-6-3) improves slightly but remains low (59–70%). Only the smallest one (L2-2-2-2) reaches ~74–76% accuracy.
   - With skip: All models surpass **75–78%** accuracy. For examples `cnn_skip1_L3-4-6-3_sched1 = 77.9%` and `cnn_skip1_L2-2-2-2_sched1 = 77.9%`. Even the deepest model (L5-6-8-5), which collapsed without skip, reaches **77.8%** with skip.
 
 -> For CNNs as well, residual connections stabilize training and enable deeper networks.
@@ -209,6 +209,7 @@ The three experiments with augmentations and skip connection achieve the higher 
   - `cnn_augm_skip1_L5-6-8-5_sched1 = 85.3%`.
   - `cnn_augm_skip1_L3-4-6-3_sched1 = 85.4%`.
   - `cnn_augm_skip1_L2-2-2-2_sched1 = 85.0%`.
+
 All clearly outperform models without augmentation (max ~78%).
 
 -> Data augmentation provides a substantial boost in performance!
@@ -227,7 +228,7 @@ Accuracy comparison for models with and without augmentation. Models with augmen
 
 
 ## Exercise 2: Pre-trained model fine-tuning from CIFAR-10 to CIFAR-100
-For the second exercise, I decided to perform fine-tuning on CIFAR100. I chose to fine-tune one of the best-performing models on CIFAR10, specifically the smaller CNN ResNet-18 style model ([2,2,2,2]). This model was trained using data augmentation, skip connections, and a learning rate scheduler, since all models with this configuration achieved similar (and the best) top accuracies, I opted for the simpler architecture.
+For the second exercise, I decided to perform fine-tuning on CIFAR100. I chose to fine-tune one of the best performing models on CIFAR10, specifically the smaller CNN ResNet-18 style model ([2,2,2,2]). This model was trained using data augmentation, skip connections, and a learning rate scheduler, since all models with this configuration achieved similar (and the best) top accuracies, I opted for the simpler architecture.
 
 Examples of how fine-tuning can be performed:
 ```bash
@@ -249,9 +250,9 @@ For the final experiments, I began with linear evaluation, where all layers were
 
 As a baseline, I first used the pretrained model purely as a **feature extractor**, training a **Linear SVM** on the extracted features. The SVM achieved a test accuracy of **24.7%**, confirming that features learned on CIFAR-10 transfer poorly to CIFAR-100 without further adaptation. This provides a rather low reference point for subsequent experiments.
 
-**Effect of freezing or rather unfreezing layers:** :
+**Effect of freezing or rather unfreezing layers:**
 
-- **Freeze all layers (layer1–layer4)** : Only the classifier is trained. Accuracy remains very low (25–34%), essentially the model is reduced to a feature extractor pretrained on CIFAR-10, whose representations are not sufficiently discriminative for CIFAR-100. With `Adam`, `lr=1e-3`, the model reaches ~33%; with `SGD`, `lr=1e-3`, `~31%`. A larger learning rate slightly improves SGD but degrades Adam. 
+- **Freeze all layers (layer1–layer4)** : Only the classifier is trained. Accuracy remains very low (25–34%), with `Adam`, `lr=1e-3`, the model reaches ~33%; with `SGD`, `lr=1e-3`, ~31%. A larger learning rate slightly improves SGD but degrades Adam. 
 
 |Training Loss  | Validation Accuracy | 
 |--------------------------------------------|------------------------------------|
@@ -263,14 +264,14 @@ As a baseline, I first used the pretrained model purely as a **feature extractor
   - Adam, lr=0.001 → 54.6% test accuracy, 81% top-5 accuracy.
   - SGD, lr=0.01 → 52.6% test accuracy. This is almost double the SVM baseline! 
 
--> Unexpectely best results come from freezing only few layers, freezing too much compromises adaptability.
+-> Unexpectedly best results come from freezing only few layers, freezing too much compromises adaptability.
 
 | Validation Accuracy varying freezing strategies (fixed `lr=1e-3`, Adam optimizer)| 
 |------------------------|
 | <img src="images/ft_layess.png" width="600">  |
 
 **Effect of the optimizer:** Adam outperforms SGD when only a few layers are unfrozen (layer1 or layer1+layer2) and the learning rate is low (0.001), reaching accuracies up to 54–55%, while SGD remains around 39–44%. With a higher learning rate (0.01) or more layers unfrozen, SGD can match or even surpass Adam, indicating that the choice of optimizer depends on the combination of unfrozen layers and learning rate. 
-Also, the adding of the scheduler, consistently slightly improves Adam results (e.g, 52.5% → 54.6%), with SGD the difference is small. 
+Also, the adding of the scheduler, consistently slightly improves Adam results (e.g 52.5% → 54.6%), with SGD the difference is small. 
 
 | Validation Accuracy varying freezing strategies and optimizer (fixed `lr=1e-3` for Adam and `lr=1e-2` for SGD)| 
 |------------------------|

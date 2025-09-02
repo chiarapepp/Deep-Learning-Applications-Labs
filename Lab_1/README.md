@@ -59,8 +59,7 @@ pip install torch torchvision tqdm matplotlib scikit-learn wandb numpy
 wandb login
 ```
 
-**Running Experiments**
-
+### Running Experiments
 It's possible to run all the experiments with the provided script:
 ```bash
 chmod +x run_experiments.sh
@@ -99,7 +98,7 @@ In addition to the common arguments presented above, the arguments specific to M
 - `--model`: Choose 'mlp' or 'resmlp'.
 - `--hidden_size`: Only for 'mlp', provide a custom list of layer sizes.
 - `--depth`: Number of hidden layers.
-- `--width`: Number of neurons per layer
+- `--width`: Number of neurons per layer.
 - `--normalization`: Enable batch normalization.
 
 When using the MLP model (as opposed to ResMLP), there are two main ways to define its architecture:
@@ -112,11 +111,11 @@ When using the MLP model (as opposed to ResMLP), there are two main ways to defi
 The first set of experiments involved applying MLP and ResMLP architectures to the MNIST dataset. I tested models with different depths (`10`, `20`, `40`) and widths (`32`, `64`, `128`), considering both the presence or absence of normalization and the use of a learning rate scheduler. This allowed me to evaluate the effect of residual connections and architectural configurations on training stability and performance.
 
 **Key observations:** 
-1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy. Even with normalization (n1), some attempt to converge but remain very low (e.g., mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
+1. **Depth without residual = total instability**: All MLPs without residual at `depth=40` collapse to ~0.11 test accuracy. Even with normalization (n1), some attempt to converge but remain very low (e.g. mlp `width=128`, `depth=40`, `normalization`, `scheduler` ~0.41 acc).
 
-→ Direct confirmation of the ResNet thesis: deeper ≠ better accuracy; in fact, clear degradation without skip connections (reference figure 3 below).
+→ Direct confirmation of the ResNet thesis: deeper ≠ better accuracy (reference figure 3 below).
 
-2. **Residual connections enable deeper architectures**: All resMLPs at depth=40 converge very well, for example `resmlp_w64_d40_n1_sched1` = 98.35% test acc vs `mlp_w64_d40_n1_sched1` = 88.7%.
+2. **Residual connections enable deeper architectures**: All resMLPs at `depth=40` converge very well, for example `resmlp_w64_d40_n1_sched0` = 97.94% test acc vs `mlp_w64_d40_n1_sched0` = 14.01%.
 
 → Residuals keep training stable even in very deep architectures, unlike plain MLPs.
 
@@ -129,12 +128,12 @@ The first set of experiments involved applying MLP and ResMLP architectures to t
 | <img src="images/val_mlp.png" height="350"> |<img src="images/val.png" height="350"> |
 
 
-3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from `97.77%` (`resmlp_w32_d10_n1_sched1`) to `98.59%` (`resmlp_w128_d10_n1_sched1`).
+3. **Effect of width (w=32 → 64 → 128)**: At equal depth and with residual, increasing width gives small gains, for examples at depth 10 the test accuracy went from 97.77% (`resmlp_w32_d10_n1_sched1`) to 98.59% (`resmlp_w128_d10_n1_sched1`).
 
 4. **Normalization is always useful**: For example
-- Without norm `mlp_w32_d20_n0_sched1`=`95.69%` accuracy.
-- With norm `mlp_w32_d20_n1_sched1`=97.41% accuracy.
-Residual + norm always pushes to the top (>98.5%).
+  - Without norm `mlp_w32_d20_n0_sched1`= 95.69% accuracy.
+  - With norm `mlp_w32_d20_n1_sched1`= 97.41% accuracy.
+  Residual + norm always pushes to the top (>98.5%).
 
 → Normalization mitigates instability, but alone is not enough for very deep nets (without residual they still collapse).
 

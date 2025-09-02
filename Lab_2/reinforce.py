@@ -17,7 +17,7 @@ Args:
     num_episodes: The number of episodes to train the policy.
     eval_interval: Evaluate the learned policy every N (eval_interval) iterations.
     eval_episodes: Number of episodes to evaluate the policy (some integer M).
-    norm_advantages: If True, normalize the provided baseline into zero mean and 1 variance.
+    norm_advantages: If True, normalize the value baseline into zero mean and 1 variance.
     clip_gradients: If True, clip the norm of the gradients of the policy and value networks.
     deterministic: If True, evaluate the learned policy with a deterministic policy sampler every eval_interval iterations.
     temperature: Softmax temperature for stochastic policy sampling.
@@ -50,7 +50,7 @@ def reinforce(
 
     # Initial temperature and minimum temperature for the scheduler.
     T_start = temperature
-    T_min = 0.05
+    T_min = 0.1
 
     if baseline not in ["none", "std", "value"]:
         raise ValueError(f"Unknown baseline {baseline}")

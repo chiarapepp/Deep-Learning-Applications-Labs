@@ -1,5 +1,4 @@
 import argparse
-from email import parser
 import os
 import wandb
 import gymnasium as gym
@@ -22,7 +21,7 @@ def parse_args():
     parser.add_argument("--hidden_dim", type=int, default=128, help="Width of the layers in the policy and value networks")
     parser.add_argument("--eval_interval", type=int, default=50, help="Evaluate the policy every --eval-interval iterations")
     parser.add_argument("--eval_episodes", type=int, default=20, help="Evaluate the policy for --eval-episodes episodes")
-    parser.add_argument("--normalize", action="store_true", help="If true, normalize G_t - b_t to zero mean and unit variance")
+    parser.add_argument("--normalize", action="store_true", help="If true, normalize (G_t - b_t) to zero mean and unit variance")
     parser.add_argument("--clip_grad", action="store_true", help="If true, clip gradients to unit norm for both the policy and the value networks")
     parser.add_argument("--det", action="store_true", help="Enable deterministic policy evaluation every --eval-interval iterations")
     parser.add_argument("--T", type=float, default=1.0, help="Softmax temperature for the policy. If a temperature scheduler is used, this will be the starting temperature")
@@ -30,11 +29,9 @@ def parse_args():
     parser.add_argument("--entropy_coeff", type=float, default=0.01, help="Coefficient for entropy regularization")
     parser.add_argument("--env", default="cartpole", choices=["cartpole", "lunarlander"], help="Choose between the Cartpole and the LunarLander environment")
 
-    parser.add_argument("--visualize", action="store_true", help="Visualize final agent")
-    
+    parser.add_argument("--visualize", action="store_true", help="Visualize an agent in action")
     parser.add_argument("--run_name", type=str, default=None, help="Wandb run name. If None, a name will be automatically generated")
-    parser.set_defaults(visualize=False)
-    
+
     args = parser.parse_args()
     return args
 

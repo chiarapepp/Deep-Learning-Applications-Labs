@@ -94,18 +94,16 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 **Key observations:**
 1. **Effect of the Baseline**:
 - **No baseline**: Performance is significantly worse. Average episode length stalls at ~100–200 steps. Rewards are unstable, and policy loss is very high (20–30), leading to noisy learning.
-- **Standard deviation baseline** (std baseline): Improvement compared to none, but still unstable, some runs remain low while others converge well! 
-- **Value baseline**: Many runs reach near-maximal rewards (~500 per episode). Even when varying hyperparameters (gamma, entropy, T, architectures), convergence is robust. 
-
--> At the end both the value baseline (under different regularization settings) and the standardized baseline exhibit strong performance, typically converging to high rewards within 400–600 steps! 
+- **Standard deviation baseline** (std baseline): Improvement compared to none, but still unstable, some runs remain low while others converge well! Average reward sometimes stays below 400.
+- **Value baseline**: Many runs reach near-maximal rewards (~500 per episode). Even when varying hyperparameters (gamma, entropy, T, architectures), convergence is robust.
 
 2. **Core Hyperparameters:**
 - The sweet spot for the discount factor (`gamma`) is 0.95–0.99, too lower (0.90) or too higher (0.999) disrupts training.
-- Low temperatures (`T`) cause policy collapse. Scheduling enhances initial exploration and improves convergence.
+- The value baseline ensures stable learning adding a lower T (0.5) makes it converge quickly to maximal rewards (~500 steps), while higher T with linear scheduling leads to instability and poor performance.
 
-| Average reward of different baselines |  Gamma comparison  |
+| T and schdulers comparison |  Gamma comparison  |
 |---------------|----------------|
-| ![rew](images/temp.png) | ![rew](images/diff_gamma_cart.png) |
+| ![rew](images/tempe.png) | ![rew](images/diff_gamma_cart.png) |
 
 3. **Architecture & Regularization:**
 - Larger networks help only if baseline is stable otherwise, they worsen instability.
@@ -113,7 +111,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 | Different types of regularization | Architecture comparison  |
 |---------------|----------------|
-| ![rew](images/mix.png) |  ![len](images/arch.png) |
+| ![rew](images/mix.png) |  ![len](images/archit.png) |
 
 
 4. **Stochastic and Deterministic Average Evaluation Rewards**
@@ -123,7 +121,6 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 | ![stoc](images/rew.png) | ![det](images/det_rew.png) |
 
 ### Qualitative Results
-
 
 | Cartpole no baseline. | Cartpole with value baseline + scheduler.  |
 |---------------|----------------|
@@ -179,7 +176,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 - [Williams, R. J. (1992). Simple statistical gradient-following algorithms for connectionist reinforcement learning.](https://link.springer.com/article/10.1007/BF00992696) Machine learning, 8(3-4), 229-256
 - [Greensmith, E., Bartlett, P. L., & Baxter, J. (2004). Variance reduction techniques for gradient estimates in reinforcement learning.](https://www.jmlr.org/papers/volume5/greensmith04a/greensmith04a.pdf) Journal of Machine Learning Research, 5(Nov), 1471-1530
-- Some useful code, e.g. [compute_returns.](https://www.geeksforgeeks.org/machine-learning/reinforce-algorithm/)
+- Some code reference, e.g. [compute_returns.](https://www.geeksforgeeks.org/machine-learning/reinforce-algorithm/)
 - [CartPole-v1 documentation.](https://gymnasium.farama.org/environments/classic_control/cart_pole/)
 - [LunarLander-v3 documentation.](https://gymnasium.farama.org/environments/box2d/lunar_lander/)
 

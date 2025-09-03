@@ -117,7 +117,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 ### Qualitative Results
 
-| Cartpole no baseline. | Cartpole with value baseline + scheduler.  |
+| Cartpole no baseline. | Cartpole with value baseline + exponential scheduler.  |
 |---------------|----------------|
 | ![nobase](gif/cartpole_no_baseline-loop.gif) | ![det](gif/cartpole_value_scheduler-loop.gif) |
 
@@ -131,10 +131,16 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 -> As with CartPole, using a value baseline is essential for REINFORCE on LunarLander.
 
+**Stochastic and Deterministic Average Evaluation**
 
-| Average reward of different baselines | Average length of the episodes, different baselines |
+| Deterministic average rewards | Deterministic average length  |
+|---------------|----------------|
+| ![stoc](images/longer_det.png) | ![det](images/mix_longer_baseline_reg.png) |
+
+| Stochastic average reward of different baselines | Stochastic average length of the episodes, different baselines |
 |---------------|----------------|
 | ![rew](images/lunar_rew_baseline.png) | ![len](images/lunar_len_baseline.png) |
+
 
 
 2.  **Core Hyperparameters:**
@@ -143,16 +149,10 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 - Runs with `normalize + clip_grad` has better stabilization: higher average rewards, less noisy policy loss!
 - Here, differently from Cartpole, changing the entropy coefficient provide slightly changes, entropy = 0.01–0.05 maintains exploration (with optimal around 0.01), an higher coefficient provide no significant advantage.
 
-
 | Different types of regularization. | Gamma comparison.  |
 |---------------|----------------|
 | ![rew](images/lunar_rew_reg.png) | ![rew](images/len_gammas.png) | 
 
-3. **Deterministic Average Evaluation Rewards**
-
-| Average rewards | Average length  |
-|---------------|----------------|
-| ![stoc](images/longer_det.png) | ![det](images/mix_longer_baseline_reg.png) |
 
 
 ### Qualitative Results

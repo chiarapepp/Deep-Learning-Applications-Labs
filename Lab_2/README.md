@@ -97,28 +97,23 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 - **Standard deviation baseline** (std baseline): Improvement compared to none, but still unstable, some runs remain low while others converge well! Average reward sometimes stays below 400.
 - **Value baseline**: Many runs reach near-maximal rewards (~500 per episode). Even when varying hyperparameters (gamma, entropy, T, architectures), convergence is robust.
 
+**Stochastic and Deterministic Average Evaluation Rewards**
+
+| Stochastic evaluation | Deterministic evaluation  |
+|---------------|----------------|
+| ![stoc](images/rew.png) | ![det](images/det_rew.png) |
+
 2. **Core Hyperparameters:**
 - The sweet spot for the discount factor (`gamma`) is 0.95–0.99, too lower (0.90) or too higher (0.999) disrupts training.
-- The value baseline ensures stable learning adding a lower T (0.5) makes it converge quickly to maximal rewards (~500 steps), while higher T with linear scheduling leads to instability and poor performance.
-
-| T and schdulers comparison |  Gamma comparison  |
-|---------------|----------------|
-| ![rew](images/tempe.png) | ![rew](images/diff_gamma_cart.png) |
+- The value baseline ensures stable learning, by adding an exponential scheduling and by using a lower T (0.5) I noticed a quicker convergence.
 
 3. **Architecture & Regularization:**
 - Larger networks help only if baseline is stable otherwise, they worsen instability.
 - Gradient clipping & normalization help control variance and stabilize training, especially with a value baseline!
 
-| Different types of regularization | Architecture comparison  |
-|---------------|----------------|
-| ![rew](images/mix.png) |  ![len](images/archit.png) |
-
-
-4. **Stochastic and Deterministic Average Evaluation Rewards**
-
-| Stochastic evaluation | Deterministic evaluation  |
-|---------------|----------------|
-| ![stoc](images/rew.png) | ![det](images/det_rew.png) |
+| Different types of regularization | Architecture comparison | Gamma comparison |
+|----------------------------------|--------------------------|------------------|
+| <img src="images/mix.png" width="300"> | <img src="images/archit.png" width="300"> | <img src="images/diff_gamma_cart.png" width="300"> |
 
 ### Qualitative Results
 

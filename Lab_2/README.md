@@ -8,7 +8,7 @@ All experiments are tracked with Weights & Biases. You can find the complete log
 
 Main objectives: 
 - Implement REINFORCE on two environments: CartPole and LunarLander.
-- Improve evaluation metrics by periodically testing the agent over multiple episodes and track average reward and episode length.
+- Periodically testing the agent over multiple episodes and track average reward and episode length.
 - Explore different baseline strategies for variance reduction.
 - Analyze the impact of hyperparameters on training stability.
 
@@ -22,7 +22,7 @@ Main objectives:
 ├── save_gif.py            # Script to render a gif of a trained agent.
 ├── gif/                   # Folder containing saved gif.
 ├── images/                # Folder containing figures/plots/results.
-├── run_experiments.sh     # Comprehensive experiment runner script
+├── run_experiments.sh     # Comprehensive experiment runner script.
 └── README.md              # This file.
 ```
 
@@ -86,7 +86,6 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 7. **Saving GIF (`save_gif.py`):** accepts some of the arguments as `main.py`, because it need to reconstruct the network and environment exactly as in training (`--env`,`--T`,`--det`, `--num_layers`, `--hidden_dim`). In addition, it uses:
     - `--episodes`: Number of full environment episodes to run and record in the GIF.
-    - `--make_gif`: Create GIF of a trained agent.
     - `--gif_path`: Path to save the gif.   
     - `--checkpoint`: Path to the checkpoint (default: best agent of the last run, `wandb/latest-run/files/checkpoint-best_eval_policy.pt`).
 
@@ -126,6 +125,11 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 | ![stoc](images/rew.png) | ![det](images/det_rew.png) |
 
 ### Qualitative Results
+
+
+| Cartpole no baseline. | Cartpole with value baseline + scheduler.  |
+|---------------|----------------|
+| ![nobase](gif/cartpole_no_baseline.gif) | ![det](gif/cartpole_value_scheduler.gif) |
 
 <table>
   <tr>

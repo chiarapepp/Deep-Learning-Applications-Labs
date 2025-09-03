@@ -94,19 +94,18 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 **Key observations:**
 1. **Effect of the Baseline**:
 - **No baseline**: Performance is significantly worse. Average episode length stalls at ~100–200 steps. Rewards are unstable, and policy loss is very high (20–30), leading to noisy learning.
-- **Standard deviation baseline** (std baseline): Improvement compared to none, but still unstable, some runs remain low while others converge well. Average reward sometimes stays below 400.
-- **Value baseline**: Clearly the most stable. Many runs reach near-maximal rewards (~500 per episode). Even when varying hyperparameters (γ, entropy, T, architectures), convergence is robust.
+- **Standard deviation baseline** (std baseline): Improvement compared to none, but still unstable, some runs remain low while others converge well! 
+- **Value baseline**: Many runs reach near-maximal rewards (~500 per episode). Even when varying hyperparameters (gamma, entropy, T, architectures), convergence is robust. 
 
--> Using a value baseline drastically reduces the variance of REINFORCE and ensures stable convergence!
+-> At the end both the value baseline (under different regularization settings) and the standardized baseline exhibit strong performance, typically converging to high rewards within 400–600 steps! 
 
 2. **Core Hyperparameters:**
 - The sweet spot for the discount factor (`gamma`) is 0.95–0.99, too lower (0.90) or too higher (0.999) disrupts training.
 - Low temperatures (`T`) cause policy collapse. Scheduling enhances initial exploration and improves convergence.
 
-
-| Average reward of different baselines  |  Gamma comparison  |
+| Average reward of different baselines |  Gamma comparison  |
 |---------------|----------------|
-| ![rew](images/baseline_avg_reward.png) | ![rew](images/diff_gamma_cart.png) |
+| ![rew](images/temp.png) | ![rew](images/diff_gamma_cart.png) |
 
 3. **Architecture & Regularization:**
 - Larger networks help only if baseline is stable otherwise, they worsen instability.
@@ -114,7 +113,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 | Different types of regularization | Architecture comparison  |
 |---------------|----------------|
-| ![rew](images/mix.png) |  ![len](images/archit.png) |
+| ![rew](images/mix.png) |  ![len](images/arch.png) |
 
 
 4. **Stochastic and Deterministic Average Evaluation Rewards**

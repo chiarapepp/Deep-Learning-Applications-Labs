@@ -27,8 +27,8 @@ Main objectives:
 ```
 
 **Networks**:
-  - `PolicyNet`: Feedforward policy network for action selection.
-  - `ValueNet`: Optional baseline network for advantage estimation.
+  - `PolicyNet`: A feedforward network that outputs action probabilities.
+  - `ValueNet`: An optional network serving as a baseline for advantage calculation.
 
 ### Requirements
 All core dependencies are already listed in the main repository’s `requirements.txt`.
@@ -43,7 +43,7 @@ wandb login
 ```
 
 ### Running Experiments
-All experiments are managed through a single script `main.py.` It is also possible to record a trained policy and save the interaction as a GIF, either in deterministic or stochastic mode, with adjustable temperature, using the script `save.py`.
+All experiments are managed through a single script `main.py.` It is also possible to record a trained agent acting inside the environment as a GIF, either in deterministic or stochastic mode, with adjustable temperature, using the script `save.py`.
 
 ```bash
 # Train on CartPole with value baseline
@@ -84,7 +84,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
     - `--visualize`: Show trained agent in action.
     - `--run_name`: Wandb run name. If None, a name will be automatically generated.
 
-7. **Saving GIF (`save_gif.py`):** accepts some of the arguments as `main.py`, because it need to reconstruct the network and environment exactly as in training (`--env`,`--T`,`--det`, `--num_layers`, `--hidden_dim`). In addition, it uses:
+7. **Saving GIF (`save_gif.py`):** accepts some of the arguments as `main.py`, because it need to reconstruct the network as in training (`--env`,`--T`,`--det`, `--num_layers`, `--hidden_dim`). In addition, it uses:
     - `--episodes`: Number of full environment episodes to run and record in the GIF.
     - `--gif_path`: Path to save the gif.   
     - `--checkpoint`: Path to the checkpoint (default: best agent of the last run, `wandb/latest-run/files/checkpoint-best_eval_policy.pt`).
@@ -99,23 +99,22 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 -> Using a value baseline drastically reduces the variance of REINFORCE and ensures stable convergence!
 
-
-| Average reward of different baselines  | Average length of the episodes, different baselines |
-|---------------|----------------|
-| ![rew](images/baseline_avg_reward.png) | ![len](images/length_baseline.png) |
-
-
 2. **Core Hyperparameters:**
 - The sweet spot for the discount factor (`gamma`) is 0.95–0.99, too lower (0.90) or too higher (0.999) disrupts training.
 - Low temperatures (`T`) cause policy collapse. Scheduling enhances initial exploration and improves convergence.
+
+
+| Average reward of different baselines  |  Gamma comparison  |
+|---------------|----------------|
+| ![rew](images/baseline_avg_reward.png) | ![rew](images/diff_gamma_cart.png) |
 
 3. **Architecture & Regularization:**
 - Larger networks help only if baseline is stable otherwise, they worsen instability.
 - Gradient clipping & normalization help control variance and stabilize training, especially with a value baseline!
 
-| Different types of regularization | Gamma comparison  | Architecture comparison  |
-|---------------|----------------|---------------|
-| ![rew](images/mix.png) | ![rew](images/diff_gamma_cart.png) | ![len](images/archit.png) |
+| Different types of regularization | Architecture comparison  |
+|---------------|----------------|
+| ![rew](images/mix.png) |  ![len](images/archit.png) |
 
 
 4. **Stochastic and Deterministic Average Evaluation Rewards**
@@ -166,16 +165,12 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 
 ### Qualitative Results
-<table>
-  <tr>
-    <th>Lunarlander no baseline.</th>
-    <th>Lunarlander with value baseline (5000 episodes and regularizations)</th>
-  </tr>
-  <tr>
-    <td><img src="gif/lunarlander_no_baseline.gif" width="350"></td>
-    <td><img src="gif/lunarlander_demo.gif" width="350"></td>
-  </tr>
-</table>
+
+| Lunarlander no baseline | Lunarlander with value baseline (5000 episodes and regularizations) |
+|---------------|----------------|
+| ![stoc](gif/lunarlander_no_baseline-loop.gif) | ![det](gif/lunarlander_demo-loop.gif) |
+
+
 
 ## Conclusions
 - REINFORCE works well on CartPole and LunarLander, but LunarLander is a more challenging  environment due to higher variance and negative initial rewards.

@@ -125,29 +125,25 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 **Key observations:**
 1. **Effect of the Baseline**:
-- **No baseline**: Very low and unstable performance. Average episodic reward often negative (e.g., -1070). Policy loss is high and the training is nearly impossible.
-- **Std baseline**: Slight stabilization, but still noisy, the average reward improves but remains inconsistent.
-- **Value baseline**: Clearly the best. Average episodic reward is often positive and consistent. Some runs reach ~700–750 in `eval_avg_reward`. I also tried to experiment with longer episodes (5000) and I found out that they yield more stable performance (`eval_avg_reward` up to ~866).
+- **No baseline**: Very low and unstable performance. Average episodic reward often negative (e.g. -71.20). Training is noisy and unpredictable.
+- **Std baseline**: Slight stabilization, average reward improves (up to 32.60) and episodes are longer (~798–1000).
+- **Value baseline**: Average reward varies widely depending on the configuration. The run's average rewards range from -33.77 to 59.92, with the highest obtained by adding normalization and gradient clipping. I also experimented with longer episodes (5000 steps) and found that they yield more stable performance(`eval_avg_reward` up to ~206).
 
--> As with CartPole, using a value baseline is essential for REINFORCE on LunarLander.
+-> As with CartPole, using a value baseline is essential for REINFORCE on LunarLande, particularly when combined with normalization, gradient clipping, and sufficient training length.
 
 **Stochastic and Deterministic Average Evaluation**
-
-| Deterministic average rewards | Deterministic average length  |
-|---------------|----------------|
-| ![stoc](images/longer_det.png) | ![det](images/mix_longer_baseline_reg.png) |
 
 | Stochastic average reward of different baselines | Stochastic average length of the episodes, different baselines |
 |---------------|----------------|
 | ![rew](images/lunar_rew_baseline.png) | ![len](images/lunar_len_baseline.png) |
-
+| Deterministic average rewards | Deterministic average length  |
+|---------------|----------------|
+| ![stoc](images/longer_det.png) | ![det](images/mix_longer_baseline_reg.png) |
 
 
 2.  **Core Hyperparameters:**
-- Too low `gamma` loses long term reward information while too high `gamma` makes training unstable. Optimal is in the range 0.95–0.99 (similar to CartPole but it's even more sensitive).
-- On LunarLander, slightly lower `lr` than CartPole helps stability, especially with gradient clipping and normalization. Default `lr = 1e-3` works reasonably well but slighty lower `lr = 5e-4` with normalization + gradient clipping has a more stable training. On the other side too high `lr` makes the policy loss explode.
-- Runs with `normalize + clip_grad` has better stabilization: higher average rewards, less noisy policy loss!
-- Here, differently from Cartpole, changing the entropy coefficient provide slightly changes, entropy = 0.01–0.05 maintains exploration (with optimal around 0.01), an higher coefficient provide no significant advantage.
+- Too low `gamma` loses long term reward information, optimal is in the range 0.95–0.99 (similar to CartPole).
+- Lower `lr = 5e-4` + normalization + clipping reach a small avg reward -64.70 (too low for stability). Default `lr = 1e-3` with normalization + gradient clipping has a more stable training and reach the highest average reward.
 
 | Different types of regularization. | Gamma comparison.  |
 |---------------|----------------|

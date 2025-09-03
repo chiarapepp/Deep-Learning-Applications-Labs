@@ -90,7 +90,7 @@ def explore_model_and_tokenizer(sample_texts: Optional[List[str]] = None):
         outputs = model(**encoded)
     
     # From Huggingface documentation
-    # last_hidden_state (Tensor of shape (batch_size, sequence_length, hidden_size)) 
+    # last_hidden_state (torch.FloatTensor of shape (batch_size, sequence_length, hidden_size)) 
     # it's the sequence of hidden states at the output of the last layer of the model.
 
     print(f"CLS token embeddings shape: {outputs.last_hidden_state[:, 0, :].shape}")

@@ -24,6 +24,7 @@ Args:
     batch_size (int): Batch size for both training and evaluation. Default is 16.
     output_dir (str): Directory to save checkpoints, logs, and the best model. Default is "runs/distilbert_lora".
     use_wandb (bool): Whether to log metrics and training info to Weights & Biases. Default is False.
+    run_name (str): Name for the WandB run. If None, a default name is generated. Default is None.
     target_modules (list): List of target modules for LoRA adaptation. Default is None.
 
 Returns:
@@ -31,7 +32,6 @@ Returns:
         training loss, global step, and metrics.
     - test_results: dictionary with evaluation metrics on the test set if available.
 """
-
 def fine_tune_with_lora(
     lora_rank: int = 8,
     lora_alpha: int = 16,
@@ -64,7 +64,7 @@ def fine_tune_with_lora(
         r=lora_rank,  # Rank of adaptation
         lora_alpha=lora_alpha,  # Alpha parameter for LoRA scaling
         lora_dropout=0.1,  # Dropout probability for LoRA layers
-        target_modules=target_modules,  # Target DistilBERT attention modules
+        target_modules=target_modules,  # Target DistilBERT modules
         bias="none",
     )
     
@@ -81,11 +81,7 @@ def fine_tune_with_lora(
 
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
-    if run_name is None:
-        run_name = f"finetuning_with_lora_r:{lora_rank}_a:{lora_alpha}_lr:{lr}"
-    else:
-        run_name = run_name
-
+    run_name = f"finetuning_with_lora_r:{lora_rank}_a:{lora_alpha}_lr:{lr}" if run_name is None else run_name
     if use_wandb:
         wandb.init(
             project="DLA_Lab_3",

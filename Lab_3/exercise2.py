@@ -16,7 +16,6 @@ import wandb
 This class implements a progress bar using TQDM for training loops.
 It updates the progress bar at each training step and closes it at the end of training.
 """
-
 class TQDMProgressCallback(TrainerCallback):
     def __init__(self):
         super().__init__()
@@ -35,7 +34,6 @@ class TQDMProgressCallback(TrainerCallback):
 """
 Function that tokenize the dataset and save it to cache
 """
-
 def tokenize_dataset(use_fixed_padding: Optional[bool] = False) -> DatasetDict:
 
     ds = load_dataset(config.dataset_name)
@@ -73,7 +71,6 @@ def tokenize_dataset(use_fixed_padding: Optional[bool] = False) -> DatasetDict:
         else:
             print(f"  ✗ Missing {key}")
     
-
     os.makedirs(config.cache_dir, exist_ok=True)
     tokenized_ds.save_to_disk(config.tokenized_path)
     print(f"\nTokenized dataset saved to: {config.tokenized_path}")
@@ -94,6 +91,7 @@ Args:
     batch_size (int): Batch size for both training and evaluation. Default is 16.
     output_dir (str): Directory to save checkpoints, logs, and the best model. Default is "runs/distilbert_finetuned".
     use_wandb (bool): Whether to log metrics to Weights & Biases. Default is False.
+    run_name (str): Name of the W&B run. Default is None.
     use_fixed_padding (bool): Whether to use fixed padding (max_length) for input sequences. Default is False.
 
 Returns:
@@ -101,7 +99,6 @@ Returns:
     - test_results: dictionary with evaluation metrics on the test set if available.
 
 """
-
 def fine_tune_model(
     lr: float = 2e-5,
     epochs: int = 5,
@@ -123,13 +120,9 @@ def fine_tune_model(
         id2label={0: "negative", 1: "positive"},   # Map label IDs to label names
         label2id={"negative": 0, "positive": 1}    # Map label names to label IDs
     )
-    
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
-    if run_name is None:
-        run_name = f"distilbert_finetuning_lr:{lr}"
-    else:
-        run_name = run_name
+    run_name = f"distilbert_finetuning_lr:{lr}" if run_name is None else run_name
 
     if use_wandb:
         wandb.init(
@@ -170,12 +163,11 @@ def fine_tune_model(
         eval_dataset=tokenized_ds["validation"],
         tokenizer=tokenizer,
         data_collator=data_collator,
-        compute_metrics=compute_metrics,   # Compute metrics function
+        compute_metrics=compute_metrics,   # Compute metrics function (utils)
         callbacks=[TQDMProgressCallback()],
     )
     
     print(f"Starting fine-tuning...")
-
     trainer.train()
     trainer.save_model(f"{output_dir}/model_final")
 

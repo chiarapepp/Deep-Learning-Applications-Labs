@@ -16,15 +16,15 @@ Main objectives:
 ### Project Structure
 ```
 Lab_3/
-├── main.py                    # Main entry point with argument parsing
-├── exercise1.py               # Dataset exploration and SVM baseline
-├── exercise2.py               # Full model fine-tuning with Trainer
-├── exercise3.py               # Parameter-efficient fine-tuning with LoRA
-├── utils.py                   # Configuration and utility functions
-├── run_experiments.sh         # Comprehensive experiment runner script
+├── main.py                    # Main entry point with argument parsing.
+├── exercise1.py               # Dataset exploration and SVM baseline.
+├── exercise2.py               # Full model fine-tuning with Trainer.
+├── exercise3.py               # Parameter-efficient fine-tuning with LoRA.
+├── utils.py                   # Configuration and utility functions.
+├── run_experiments.sh         # Comprehensive experiment runner script.
 ├── check_parameters.sh        # Script to compute trainable and total parameters for the main models.
-├── images/                    # Folder containing figures/plots/results
-└── README.md                  # This file
+├── images/                    # Folder containing figures/plots/results.
+└── README.md                  # This file.
 ```
 
 ### Requirements
@@ -54,7 +54,7 @@ python main.py --step e13
 # Tokenize dataset for fine-tuning (Exercise 2.1)
 python main.py --step e21 
 
-# Fine-tune DistilBERT with Trainer (Exercise 2.3)
+# Fine-tune DistilBERT with Trainer (Exercise 2.2 and 2.3)
 python main.py --step e23 $ARGS_finetuning
 
 # Fine-tune DistilBERT using LoRA (Exercise 3.1)
@@ -100,14 +100,14 @@ In this exercise, I explored the _Rotten Tomatoes_ dataset and the pre-trained D
 
 2. **Tokenizer and sample exploration**:
     - Sample sentences were used to understand tokenizer behavior. It correctly splits text into subword tokens and adds special tokens `[CLS]` (ID `101`) at the start of the sentence and `[SEP]` (ID `102`) at the end. 
-    - The [CLS] token embedding represents the full sentence and can be used for downstream tasks.
+    - The `[CLS]` token embedding represents the full sentence and can be used for downstream tasks.
     - Padding and truncation are used to handle different text lengths, ensuring a consistent size for batch processing.
     - DistilBERT outputs hidden states of size `768` for each token.
 
 3. **SVM baseline**:
     - The pre trained `DistilBERT` model was used as a feature extractor. 
-    - `CLS` token embeddings were extracted from the training and validation sets.
-    - A **Linear SVM classifier** trained on these features provides a simple but stable baseline for sentiment classification.
+    - `CLS` token embeddings were extracted from the training, validation and test sets.
+    - A **Linear SVM classifier** trained on these features provides a simple baseline for sentiment classification.
     - Metrics (accuracy, precision, recall, F1) give an initial reference point before fine-tuning the transformer.
 
 **SVM Results:**      
@@ -132,7 +132,7 @@ The HuggingFace tokenizer supports multiple padding strategies, controlled by th
 
 - `False` (default): No padding is applied during tokenization. Sequences keep their natural lengths (after truncation to `max_length` if specified) and padding is applied dynamically at training time by `DataCollatorWithPadding`, which pads each batch to the length of the longest sequence it contains. This approach is more efficient because short sequences are not unnecessarily padded to a global maximum, leading to less wasted computation and memory.
 
-- `max_length` (fixed padding, enabled when `use_fixed_padding=True`) : Every example is padded to the fixed `max_length` (`512` tokens for DistilBERT) and truncated if longer. This produces uniform batch shapes, which can simplify debugging and visualization. It can also be useful on older hardware or frameworks that require fixed-size tensors. However, this strategy is computationally heavier, as a result, training is slower and requires more memory compared to dynamic padding.
+- `max_length` (fixed padding, enabled when `use_fixed_padding=True`) : Every example is padded to the fixed `max_length` (`512` tokens for DistilBERT) and truncated if longer. This produces uniform batch shapes, which can simplify debugging and visualization and can be useful on older hardware or frameworks that require fixed-size tensors. However, this strategy is computationally heavier, as a result, training is slower and requires more memory compared to dynamic padding.
 
 **Runtime Comparison: Dynamic vs Fixed Padding**
 I evaluated both padding strategies for fine-tuning DistilBERT on the Rotten Tomatoes dataset (batch size = 16, epochs = 5, learning rate = 2e-5) on an NVIDIA GeForce RTX 4060 Ti, the results show a substantial speed advantage for dynamic padding:
@@ -177,17 +177,17 @@ The study focused on comparing two different learning rates (`2e-4` and `2e-5`) 
 
 **Key observations:**
 
-- Using a learning rate of (`2e-5`) resulted in a lower training loss (~0.19), indicating stable and effective learning while a higher learning rate (`2e-4`) produced a higher training loss (~0.22), suggesting that excessive learning rates can cause oscillations and reduce the model’s generalization (see figure below).
-- The best overall performance was achieved with `2e-5`, regardless of padding, delivering the highest F1 score, recall, and balanced precision.
-- High learning rate runs suffer from reduced recall and slightly higher loss, confirming that lower learning rates are better for stable convergence on small datasets.
+- Using a learning rate of (`2e-5`) resulted in a lower training loss (~0.19), indicating stable and effective learning. On the other hand using higher learning rate (`2e-4`) led to a higher training loss (~0.22) and reduced recall, suggesting that excessive learning rates can destabilize training and harm generalization on small datasets.
+
+- Overall the best performance was achieved with `2e-5`, regardless of padding, delivering the highest F1 score, recall, and balanced precision.
 
 **Figures:** 
 |Train Loss over Steps: Learning Rate Comparison| Padding Strategy Comparison|
 |---------------|----------------|
 | ![fixed](images/distil_lr.png)| ![dynamic](images/padding_comp_distil.png) |
-| In blue `lr=2e-4`, in red `lr=2e-5`.       | Same fine-tuning parameters except different padding.|                               
+| In blue `lr=2e-4`, in red `lr=2e-5`.       | Same fine-tuning parameters except different padding. |                               
 
-There is almost no difference in using either padding strategies except on the runtime.
+-> There is almost no difference in using either padding strategies except on the runtime!
 
 ## Exercise 3: Efficient Fine-tuning with LoRA
 LoRA was applied with configurable rank, alpha, and target modules. Experiments varied padding, learning rate, and module selection (see `exercise3.py`).
@@ -209,10 +209,10 @@ LoRA was applied with configurable rank, alpha, and target modules. Experiments 
 
 **Key observations:**
 - LoRA achieves strong performance while training only a small fraction of the parameters.
-- For Attention-only modules, increasing the learning rate to `2e-4` slightly improves accuracy and F1, though the gains are modest compared to `2e-5`.
+- For Attention only modules, changing the learning rate between `2e-4` and `2e-5` has minimal impact on metrics.
 - Expanding the target modules to Attention + FFN (`q_lin, k_lin, v_lin, out_lin, lin1, lin2`) shows little improvements especially when combined with `lr=2e-4`. The best results are obtained with `lr=2e-4`, Attention + FFN, `r=8/α=32`, reaching Test `Accuracy 0.8443` and `F1 0.8460`.
-- Lower learning rates (`2e-5`) lead to marginally lower metrics.
-- Higher LoRA rank/alpha (`16,64`) does not consistently outperform smaller rank/alpha (`8,32`). The optimal configuration balances module target, learning rate, and rank rather than relying solely on parameter count.
+- Lower learning rates (`2e-5`) on Attention + FFN lead to marginally lower metrics.
+- Higher LoRA rank/alpha (`16,64`) does not consistently outperform smaller rank/alpha (`8,32`), so the optimal configuration balances module target, learning rate, and rank rather than relying solely on parameter count.
 
 **Figures:**
 |Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`) (`rank=8`, `alpha=32`, Attention+FFN) | Train Loss over Steps: Learning Rate Comparison (`2e-4` and `2e-5`)(`rank=16`, `alpha=64`, Attention+FFN)|

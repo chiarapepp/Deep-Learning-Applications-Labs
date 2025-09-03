@@ -136,6 +136,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 | Stochastic average reward of different baselines | Stochastic average length of the episodes, different baselines |
 |---------------|----------------|
 | ![rew](images/lunar_rew_baseline.png) | ![len](images/lunar_len_baseline.png) |
+
 | Deterministic average rewards | Deterministic average length  |
 |---------------|----------------|
 | ![stoc](images/longer_det.png) | ![det](images/mix_longer_baseline_reg.png) |

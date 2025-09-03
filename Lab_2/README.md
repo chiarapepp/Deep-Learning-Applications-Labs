@@ -143,7 +143,7 @@ python save_gif.py --env lunarlander --checkpoint wandb/run_id/files/checkpoint-
 
 
 2.  **Core Hyperparameters:**
-- Too low `gamma` loses long term reward information, optimal is in the range 0.95–0.99 (similar to CartPole).
+- Too low `gamma` loses long term reward information while too high `gamma` makes training unstable. Optimal is in the range 0.95–0.99 (similar to CartPole).
 - Lower `lr = 5e-4` + normalization + clipping reach a small avg reward -64.70 (too low for stability). Default `lr = 1e-3` with normalization + gradient clipping has a more stable training and reach the highest average reward.
 
 | Different types of regularization. | Gamma comparison.  |
